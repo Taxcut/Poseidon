@@ -1,0 +1,22 @@
+name: Poseidon
+main: dev.codex.poseidon.PoseidonPlugin
+version: ${project.version}
+author: Codex
+description: Custom packet-first HCF anticheat foundation for Minecraft 1.7/1.8.
+depend: [ProtocolLib]
+commands:
+  poseidon:
+    description: Poseidon staff command.
+    aliases: [poseidonac, pac, psdn, pdn, ps, anticheat, anti, ac]
+    permission: poseidon.command
+  alerts:
+    description: Toggle Poseidon staff alerts.
+    aliases: [alert, palerts, palert, togglealerts, togalerts]
+    permission: poseidon.alerts
+permissions:
+  poseidon.command:
+    description: Allows use of the Poseidon command.
+    default: op
+  poseidon.alerts:
+    description: Allows viewing anticheat alerts.
+    default: op

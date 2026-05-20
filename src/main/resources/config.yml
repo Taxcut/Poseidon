@@ -1,0 +1,154 @@
+settings:
+  movement-tolerance: BALANCED
+  runtime-sampler-interval-ticks: 2
+  transaction-interval-ticks: 20
+  stale-transaction-ms: 10000
+  alerts:
+    permission: poseidon.alerts
+    console: true
+    cooldown-ms: 250
+  flag-log:
+    enabled: true
+    file: flags.jsonl
+    flush-interval-ticks: 20
+    max-lines-per-flush: 256
+  violation-decay:
+    enabled: true
+    interval-ticks: 20
+    amount: 0.15
+
+cloud:
+  enabled: false
+  instance-id: hcf-1
+  endpoint-url: ""
+  api-key: ""
+  timeout-ms: 1500
+  spool-file: cloud-signals.jsonl
+  flush-interval-ticks: 40
+  max-lines-per-flush: 512
+  max-posts-per-flush: 2
+  cross-instance:
+    enabled: false
+    reputation-file: cross-instance-reputation.jsonl
+    flush-interval-ticks: 40
+    max-lines-per-flush: 512
+    import-interval-ticks: 100
+    max-record-age-ms: 86400000
+    local-weight: 1.0
+    remote-weight: 0.75
+    minimum-risk: 10.0
+
+mitigations:
+  enabled: true
+  mode: monitor
+  interval-ticks: 20
+  decay-per-second: 0.75
+  duration-ms: 30000
+  cross-instance-weight: 0.40
+  thresholds:
+    light: 8.0
+    medium: 16.0
+    heavy: 28.0
+  weights:
+    movement: 1.20
+    combat: 1.00
+    inventory: 0.90
+    world: 1.10
+    packet: 0.80
+    timing: 1.10
+    latency: 0.65
+    behavior: 1.75
+  actions:
+    combat-damage-scale:
+      light: 0.95
+      medium: 0.75
+      heavy: 0.0
+    combat-range-limit:
+      light: 3.15
+      medium: 2.95
+      heavy: 2.70
+    cancel-inventory-at: MEDIUM
+    cancel-world-at: HEAVY
+    movement-setback-heavy: false
+
+model:
+  enabled: true
+  interval-ticks: 20
+  decay-per-second: 0.55
+  bias: 7.5
+  scale: 16.0
+  weights:
+    movement: 1.20
+    combat: 1.35
+    inventory: 0.95
+    world: 1.15
+    packet: 0.80
+    timing: 1.10
+    latency: 0.80
+    behavior: 1.60
+
+checks:
+  BadPacketsA:
+    enabled: true
+    alert-vl: 1.0
+    max-pitch: 90.0
+  BadPacketsB:
+    enabled: true
+    alert-vl: 1.0
+    max-coordinate: 32000000.0
+  BadPacketsC:
+    enabled: true
+    alert-vl: 1.0
+  TimerA:
+    enabled: true
+    alert-vl: 4.0
+    max-flying-packets-per-second: 55
+    decay-per-second: 0.35
+  MoveA:
+    enabled: true
+    alert-vl: 2.0
+    max-horizontal-delta: 12.0
+    max-vertical-delta: 12.0
+    teleport-exemption-ms: 2000
+  SimulationA:
+    enabled: true
+    alert-vl: 5.0
+    teleport-exemption-ms: 2000
+    max-ticks: 5
+    horizontal-buffer: 0.18
+    vertical-buffer: 0.18
+    velocity-age-ms: 1000
+  InventoryA:
+    enabled: true
+    alert-vl: 4.0
+    max-clicks-per-second: 18
+    max-moving-horizontal: 0.35
+    recent-attack-ms: 250
+  WorldInteractionA:
+    enabled: true
+    alert-vl: 4.0
+    max-places-per-second: 14
+    max-bridge-horizontal: 0.34
+    min-bridge-pitch: 65.0
+  LatencyAbuseA:
+    enabled: true
+    alert-vl: 999.0
+    alert: false
+    signal-interval-ms: 1000
+    max-pending-transactions: 6
+    stale-transaction-ms: 2500
+  ModelA:
+    enabled: true
+    alert-vl: 3.0
+    score-threshold: 0.78
+    min-confidence: 0.25
+    alert-interval-ms: 5000
+  ReachA:
+    enabled: true
+    alert-vl: 6.0
+    max-distance: 4.40
+    max-latency-extra: 0.60
+  AutoClickerA:
+    enabled: true
+    alert-vl: 5.0
+    max-cps: 24
