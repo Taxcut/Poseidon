@@ -29,7 +29,7 @@ Status: implemented for the first public-family pass.
 - Simulate legal movement envelopes instead of comparing against one magic speed number
 - Keep false-positive evidence in logs before enabling punishments
 
-Status: envelope simulation implemented; exact collision-box enumeration still pending.
+Status: reloadable experimental envelope simulation implemented with sprint/sneak, common surface, velocity, slime, and complex-block sampling; exact collision-box enumeration still pending.
 
 ## Phase 4: Combat Model
 
@@ -39,7 +39,7 @@ Status: envelope simulation implemented; exact collision-box enumeration still p
 - Separate obvious reach from subtle reach so thresholds can be tuned independently
 - Add aim consistency checks only after collecting clean legit fight data
 
-Status: conservative historical reach implemented; deeper rotation/aim heuristics pending.
+Status: historical ray-box reach implemented with latency rewind, rotation direction, pose adjustment, and conservative obstruction checks; deeper combat replay tuning pending.
 
 ## Phase 5: Velocity and Setbacks
 
@@ -48,7 +48,7 @@ Status: conservative historical reach implemented; deeper rotation/aim heuristic
 - Account for collision, liquids, webs, ground friction, and server correction packets
 - Add setback support only after movement simulation is reliable
 
-Status: outbound velocity tracking implemented; validation windows pending.
+Status: outbound velocity tracking and an experimental response-ratio check implemented; transaction-confirmed velocity windows pending.
 
 ## Phase 6: Tuning and Operations
 
@@ -57,4 +57,4 @@ Status: outbound velocity tracking implemented; validation windows pending.
 - Add punishment actions after checks have enough live data
 - Test against legit recordings, lag simulation, TPS drops, and common HCF clients
 
-Status: signal logs, cloud spool, behavior model, and mitigation monitor are implemented.
+Status: signal logs, cloud spool, behavior model, mitigation monitor, profiles, check metadata validation, and staff-test commands are implemented.

@@ -12,6 +12,9 @@ This audit separates wired systems from systems that still need deeper engineeri
 - Signal consumers for local behavior scoring, mitigation scoring, optional cloud export, and optional shared-file reputation.
 - Conservative checks for bad packets, timer, movement delta, movement envelope, reach, autoclicker rate, inventory behavior, world interaction, latency abuse, and model score.
 - Mitigation engine in monitor/enforce modes, with combat range/damage controls and optional inventory/world/movement restrictions.
+- Reloadable check metadata covering enabled, alert, punish, max VL, decay, buffer, mitigation, experimental status, category, severity, and description.
+- Expanded staff commands for checks, profiles, verbose alerts, violations, resets, logs, and runtime metrics.
+- Raytraced reach foundation, velocity response foundation, split inventory/world checks, aim-analysis foundations, improved click statistics, and packet exploit guards.
 
 ## Fixed In This Pass
 
@@ -25,15 +28,16 @@ This audit separates wired systems from systems that still need deeper engineeri
 - Transaction tracking disables itself with a warning if the runtime does not support server transaction packets.
 - Cross-instance tracking now defaults disabled if config keys are missing, matching the 100-player performance profile.
 - Reach ignores cross-world entity-id mappings.
+- `/poseidon reload` now rebuilds check instances and restarts reloadable managers instead of leaving stale thresholds in memory.
+- Monitor, staff-test, and production profile application is wired, with punishments still off by default.
 
 ## Needs More Work Before Enforce Mode
 
-- Replace `SimulationA` movement envelopes with exact 1.7/1.8 physics and collision-box enumeration for slabs, stairs, carpets, pistons, liquids, webs, climbables, fences, doors, ice, soul sand, block edge cases, and server-specific movement patches.
-- Add velocity validation that pairs outbound velocity with transaction confirmations, expected response windows, and collision-aware exemptions.
-- Replace reach distance checks with ray-box hit validation using attacker rotation, target historical boxes, latency compensation, sprint/sneak pose, and world obstruction checks.
+- Replace `SimulationA` movement envelopes with exact 1.7/1.8 physics and full collision-box enumeration for slabs, stairs, carpets, pistons, liquids, webs, climbables, fences, doors, ice, soul sand, block edge cases, and server-specific movement patches.
+- Deepen `VelocityA` so every velocity packet is paired with explicit transaction confirmation windows and replayable response traces.
+- Deepen `ReachA` with more precise target pose history, server-side hurtbox quirks, and better obstruction exemptions for HCF arena layouts.
 - Add rotation/aim checks only after collecting clean legit HCF fight logs; aim checks are easy to false flag without real baseline data.
-- Split inventory checks into explicit InventoryMove, AutoSoup/Refill, FastClick, and CombatInventory families with server-rule-aware exemptions.
-- Split world interaction into scaffold, tower, fast-place, impossible-face, raytrace, and block-order checks.
+- Add AutoSoup/AutoPot, ChestStealer, Refill, ScaffoldFace, ScaffoldExpand, Eagle/Safewalk, and block-order checks only when there is enough packet context to avoid weak detections.
 - Add replay/tuning tooling for `flags.jsonl` so thresholds can be validated against real legit and cheat sessions.
 - Add action profiles for alerts-only, staff-test, setback-test, and production. Keep default `mitigations.mode: monitor`.
 

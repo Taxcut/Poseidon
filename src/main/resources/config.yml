@@ -3,6 +3,9 @@ settings:
   runtime-sampler-interval-ticks: 2
   transaction-interval-ticks: 20
   stale-transaction-ms: 10000
+  verbose-default: false
+  lag:
+    tps-threshold: 18.5
   alerts:
     permission: poseidon.alerts
     console: true
@@ -87,68 +90,518 @@ model:
     latency: 0.80
     behavior: 1.60
 
+replay:
+  enabled: false
+  file: replay-sessions.jsonl
+  flush-interval-ticks: 40
+  max-lines-per-flush: 512
+
+profiles:
+  default: monitor
+  monitor:
+    punish: false
+    mitigations-mode: monitor
+  staff-test:
+    punish: false
+    mitigations-mode: staff-test
+  production:
+    punish: configurable
+    mitigations-mode: production
+
 checks:
   BadPacketsA:
     enabled: true
+    alert: true
+    punish: false
     alert-vl: 1.0
+    max-vl: 20.0
+    decay: 0.05
+    buffer: 0.0
+    setback: false
+    mitigation: none
+    experimental: false
+    description: Rejects impossible rotation values such as invalid pitch.
+    category: PACKET
+    severity: CRITICAL
     max-pitch: 90.0
   BadPacketsB:
     enabled: true
+    alert: true
+    punish: false
     alert-vl: 1.0
+    max-vl: 20.0
+    decay: 0.05
+    buffer: 0.0
+    setback: false
+    mitigation: none
+    experimental: false
+    description: Rejects invalid or out-of-world movement coordinates.
+    category: PACKET
+    severity: CRITICAL
     max-coordinate: 32000000.0
   BadPacketsC:
     enabled: true
+    alert: true
+    punish: false
     alert-vl: 1.0
+    max-vl: 20.0
+    decay: 0.05
+    buffer: 0.0
+    setback: false
+    mitigation: none
+    experimental: false
+    description: Detects impossible use-entity actions such as self attack.
+    category: PACKET
+    severity: HIGH
+  PacketSpamA:
+    enabled: true
+    alert: true
+    punish: false
+    alert-vl: 6.0
+    max-vl: 40.0
+    decay: 0.25
+    buffer: 0.0
+    setback: false
+    mitigation: none
+    experimental: false
+    description: Detects excessive inbound packet bursts.
+    category: PACKET
+    severity: HIGH
+    max-packets-per-second: 180
+  PayloadA:
+    enabled: true
+    alert: true
+    punish: false
+    alert-vl: 1.0
+    max-vl: 20.0
+    decay: 0.05
+    buffer: 0.0
+    setback: false
+    mitigation: none
+    experimental: false
+    description: Protects against oversized custom payload packets.
+    category: PACKET
+    severity: CRITICAL
+    max-bytes: 32767
+  SignExploitA:
+    enabled: true
+    alert: true
+    punish: false
+    alert-vl: 1.0
+    max-vl: 20.0
+    decay: 0.05
+    buffer: 0.0
+    setback: false
+    mitigation: none
+    experimental: false
+    description: Protects against oversized sign update lines.
+    category: PACKET
+    severity: CRITICAL
+    max-line-length: 80
   TimerA:
     enabled: true
+    alert: true
+    punish: false
     alert-vl: 4.0
+    max-vl: 40.0
+    decay: 0.20
+    buffer: 0.0
+    setback: false
+    mitigation: light
+    experimental: false
+    description: Detects sustained excess flying packet rate.
+    category: MOVEMENT
+    severity: HIGH
     max-flying-packets-per-second: 55
     decay-per-second: 0.35
+  LatencyAbuseA:
+    enabled: true
+    alert: false
+    punish: false
+    alert-vl: 999.0
+    max-vl: 100.0
+    decay: 0.10
+    buffer: 0.0
+    setback: false
+    mitigation: none
+    experimental: false
+    description: Detects transaction delay and lag-compensates other checks.
+    category: LATENCY
+    severity: MEDIUM
+    signal-interval-ms: 1000
+    max-pending-transactions: 6
+    stale-transaction-ms: 2500
   MoveA:
     enabled: true
+    alert: true
+    punish: false
     alert-vl: 2.0
+    max-vl: 40.0
+    decay: 0.12
+    buffer: 0.0
+    setback: false
+    mitigation: light
+    experimental: false
+    description: Conservative impossible movement delta guard.
+    category: MOVEMENT
+    severity: MEDIUM
     max-horizontal-delta: 12.0
     max-vertical-delta: 12.0
     teleport-exemption-ms: 2000
   SimulationA:
     enabled: true
+    alert: true
+    punish: false
     alert-vl: 5.0
+    max-vl: 60.0
+    decay: 0.18
+    buffer: 0.18
+    setback: false
+    mitigation: monitor
+    experimental: true
+    description: Experimental movement prediction envelope for 1.7/1.8 physics.
+    category: EXPERIMENTAL
+    severity: HIGH
     teleport-exemption-ms: 2000
     max-ticks: 5
     horizontal-buffer: 0.18
     vertical-buffer: 0.18
     velocity-age-ms: 1000
-  InventoryA:
+  VelocityA:
     enabled: true
+    alert: true
+    punish: false
+    alert-vl: 5.0
+    max-vl: 60.0
+    decay: 0.20
+    buffer: 0.0
+    setback: false
+    mitigation: monitor
+    experimental: true
+    description: Experimental knockback response validation.
+    category: EXPERIMENTAL
+    severity: HIGH
+    min-age-ms: 80
+    max-age-ms: 900
+    min-horizontal: 0.18
+    min-horizontal-ratio: 0.35
+    min-vertical-ratio: 0.25
+  ReachA:
+    enabled: true
+    alert: true
+    punish: false
+    alert-vl: 6.0
+    max-vl: 60.0
+    decay: 0.20
+    buffer: 0.0
+    setback: false
+    mitigation: medium
+    experimental: false
+    description: Latency-compensated combat reach validation.
+    category: COMBAT
+    severity: HIGH
+    max-distance: 4.40
+    max-latency-extra: 0.60
+    obstruction-check: true
+  AutoClickerA:
+    enabled: true
+    alert: true
+    punish: false
+    alert-vl: 5.0
+    max-vl: 50.0
+    decay: 0.20
+    buffer: 0.0
+    setback: false
+    mitigation: light
+    experimental: false
+    description: Combat click rate and burst detection.
+    category: COMBAT
+    severity: MEDIUM
+    max-cps: 24
+  AutoClickerB:
+    enabled: true
+    alert: true
+    punish: false
     alert-vl: 4.0
+    max-vl: 50.0
+    decay: 0.20
+    buffer: 0.0
+    setback: false
+    mitigation: monitor
+    experimental: true
+    description: Experimental duplicate click-delay analysis.
+    category: EXPERIMENTAL
+    severity: MEDIUM
+    min-samples: 20
+    max-duplicate-ratio: 0.72
+  AutoClickerC:
+    enabled: true
+    alert: true
+    punish: false
+    alert-vl: 4.0
+    max-vl: 50.0
+    decay: 0.20
+    buffer: 0.0
+    setback: false
+    mitigation: monitor
+    experimental: true
+    description: Experimental low click-variance analysis.
+    category: EXPERIMENTAL
+    severity: MEDIUM
+    min-samples: 24
+    min-average-ms: 38.0
+    max-deviation-ms: 4.0
+  AutoClickerD:
+    enabled: true
+    alert: true
+    punish: false
+    alert-vl: 5.0
+    max-vl: 50.0
+    decay: 0.20
+    buffer: 0.0
+    setback: false
+    mitigation: monitor
+    experimental: true
+    description: Experimental combined click pattern/randomization analysis.
+    category: EXPERIMENTAL
+    severity: MEDIUM
+    min-samples: 30
+    max-variance: 35.0
+    min-duplicate-ratio: 0.45
+  AimSnap:
+    enabled: true
+    alert: true
+    punish: false
+    alert-vl: 6.0
+    max-vl: 40.0
+    decay: 0.25
+    buffer: 0.0
+    setback: false
+    mitigation: monitor
+    experimental: true
+    description: Experimental combat snap rotation analysis.
+    category: EXPERIMENTAL
+    severity: MEDIUM
+    min-yaw-delta: 70.0
+    max-pitch-delta: 1.0
+  AimSmooth:
+    enabled: true
+    alert: true
+    punish: false
+    alert-vl: 6.0
+    max-vl: 40.0
+    decay: 0.25
+    buffer: 0.0
+    setback: false
+    mitigation: monitor
+    experimental: true
+    description: Experimental overly-smooth aim variance analysis.
+    category: EXPERIMENTAL
+    severity: MEDIUM
+    min-samples: 30
+    max-yaw-variance: 0.002
+  AimDivisor:
+    enabled: true
+    alert: true
+    punish: false
+    alert-vl: 6.0
+    max-vl: 40.0
+    decay: 0.25
+    buffer: 0.0
+    setback: false
+    mitigation: monitor
+    experimental: true
+    description: Experimental duplicate rotation divisor analysis.
+    category: EXPERIMENTAL
+    severity: MEDIUM
+    min-samples: 28
+    min-duplicate-ratio: 0.62
+  AimConsistency:
+    enabled: true
+    alert: true
+    punish: false
+    alert-vl: 6.0
+    max-vl: 40.0
+    decay: 0.25
+    buffer: 0.0
+    setback: false
+    mitigation: monitor
+    experimental: true
+    description: Experimental low-entropy combat rotation consistency analysis.
+    category: EXPERIMENTAL
+    severity: MEDIUM
+    min-samples: 35
+    max-combined-variance: 0.025
+  InventoryMove:
+    enabled: true
+    alert: true
+    punish: false
+    alert-vl: 4.0
+    max-vl: 40.0
+    decay: 0.18
+    buffer: 0.0
+    setback: false
+    mitigation: light
+    experimental: false
+    description: Detects sustained movement while a server inventory is open.
+    category: INVENTORY
+    severity: MEDIUM
+    max-horizontal: 0.22
+    min-open-ms: 150
+  FastClick:
+    enabled: true
+    alert: true
+    punish: false
+    alert-vl: 4.0
+    max-vl: 40.0
+    decay: 0.18
+    buffer: 0.0
+    setback: false
+    mitigation: light
+    experimental: false
+    description: Detects excessive inventory click rate.
+    category: INVENTORY
+    severity: MEDIUM
+    max-clicks-per-second: 20
+  CombatInventory:
+    enabled: true
+    alert: true
+    punish: false
+    alert-vl: 4.0
+    max-vl: 40.0
+    decay: 0.18
+    buffer: 0.0
+    setback: false
+    mitigation: light
+    experimental: false
+    description: Detects attacking while server inventory state is open.
+    category: INVENTORY
+    severity: MEDIUM
+    recent-open-ms: 350
+  FastPlace:
+    enabled: true
+    alert: true
+    punish: false
+    alert-vl: 4.0
+    max-vl: 40.0
+    decay: 0.18
+    buffer: 0.0
+    setback: false
+    mitigation: light
+    experimental: false
+    description: Detects excessive block placement rate.
+    category: WORLD
+    severity: MEDIUM
+    max-places-per-second: 16
+  ImpossiblePlace:
+    enabled: true
+    alert: true
+    punish: false
+    alert-vl: 4.0
+    max-vl: 40.0
+    decay: 0.18
+    buffer: 0.0
+    setback: false
+    mitigation: medium
+    experimental: false
+    description: Detects invalid block face or impossible block placement distance.
+    category: WORLD
+    severity: HIGH
+    max-distance: 6.0
+  ScaffoldRotation:
+    enabled: true
+    alert: true
+    punish: false
+    alert-vl: 5.0
+    max-vl: 40.0
+    decay: 0.22
+    buffer: 0.0
+    setback: false
+    mitigation: monitor
+    experimental: true
+    description: Experimental bridge placement rotation alignment check.
+    category: EXPERIMENTAL
+    severity: MEDIUM
+    min-pitch: 55.0
+    min-move: 0.24
+  ScaffoldTower:
+    enabled: true
+    alert: true
+    punish: false
+    alert-vl: 5.0
+    max-vl: 40.0
+    decay: 0.22
+    buffer: 0.0
+    setback: false
+    mitigation: monitor
+    experimental: true
+    description: Experimental impossible tower acceleration foundation.
+    category: EXPERIMENTAL
+    severity: MEDIUM
+    max-upward-delta: 0.72
+  BlockRaytrace:
+    enabled: true
+    alert: true
+    punish: false
+    alert-vl: 5.0
+    max-vl: 40.0
+    decay: 0.22
+    buffer: 0.0
+    setback: false
+    mitigation: monitor
+    experimental: true
+    description: Experimental block placement ray alignment check.
+    category: EXPERIMENTAL
+    severity: MEDIUM
+    max-angle: 75.0
+  ModelA:
+    enabled: true
+    alert: true
+    punish: false
+    alert-vl: 3.0
+    max-vl: 40.0
+    decay: 0.20
+    buffer: 0.0
+    setback: false
+    mitigation: monitor
+    experimental: true
+    description: Confidence-layer alert from combined behavior score.
+    category: EXPERIMENTAL
+    severity: MEDIUM
+    score-threshold: 0.78
+    min-confidence: 0.25
+    alert-interval-ms: 5000
+  InventoryA:
+    enabled: false
+    alert: true
+    punish: false
+    alert-vl: 4.0
+    max-vl: 40.0
+    decay: 0.18
+    buffer: 0.0
+    setback: false
+    mitigation: none
+    experimental: false
+    description: Legacy aggregate inventory behavior check.
+    category: INVENTORY
+    severity: MEDIUM
     max-clicks-per-second: 18
     max-moving-horizontal: 0.35
     recent-attack-ms: 250
   WorldInteractionA:
-    enabled: true
+    enabled: false
+    alert: true
+    punish: false
     alert-vl: 4.0
+    max-vl: 40.0
+    decay: 0.18
+    buffer: 0.0
+    setback: false
+    mitigation: none
+    experimental: false
+    description: Legacy aggregate world interaction check.
+    category: WORLD
+    severity: MEDIUM
     max-places-per-second: 14
     max-bridge-horizontal: 0.34
     min-bridge-pitch: 65.0
-  LatencyAbuseA:
-    enabled: true
-    alert-vl: 999.0
-    alert: false
-    signal-interval-ms: 1000
-    max-pending-transactions: 6
-    stale-transaction-ms: 2500
-  ModelA:
-    enabled: true
-    alert-vl: 3.0
-    score-threshold: 0.78
-    min-confidence: 0.25
-    alert-interval-ms: 5000
-  ReachA:
-    enabled: true
-    alert-vl: 6.0
-    max-distance: 4.40
-    max-latency-extra: 0.60
-  AutoClickerA:
-    enabled: true
-    alert-vl: 5.0
-    max-cps: 24

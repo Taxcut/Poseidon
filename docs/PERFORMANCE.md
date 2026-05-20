@@ -19,6 +19,8 @@ This profile is intended for roughly 100-player HCF servers.
 - Cloud spooling uses batch writes and capped HTTP sends.
 - Cross-instance reputation writes are batched.
 - Runtime block/environment sampling runs every 2 ticks by default.
+- Packet and per-check average execution time are tracked for staff diagnostics.
+- All flag logging remains batched through async writers.
 
 ## Recommended Production Settings
 
@@ -40,3 +42,5 @@ settings:
 After at least a few hours of clean live logs, enable `mitigations.mode: enforce` gradually.
 
 Only enable cloud/cross-instance tracking when you have a real shared path or backend endpoint. For multiple backend instances, put `cloud.cross-instance.reputation-file` on fast shared storage or replace it with a dedicated backend.
+
+Use `/ac info` and `/ac check <check>` to watch packet and check timing while testing with 100 players.

@@ -4,6 +4,8 @@ import com.comphenix.protocol.PacketType;
 import dev.codex.poseidon.PoseidonPlugin;
 import dev.codex.poseidon.alert.AlertManager;
 import dev.codex.poseidon.check.Check;
+import dev.codex.poseidon.check.CheckCategory;
+import dev.codex.poseidon.check.CheckSeverity;
 import dev.codex.poseidon.packet.PacketContext;
 
 public final class TimerACheck extends Check {
@@ -13,8 +15,13 @@ public final class TimerACheck extends Check {
 
     public TimerACheck(PoseidonPlugin plugin, AlertManager alertManager) {
         super("TimerA",
-                plugin.getConfig().getBoolean("checks.TimerA.enabled", true),
-                plugin.getConfig().getDouble("checks.TimerA.alert-vl", 4.0D));
+                plugin,
+                true,
+                4.0D,
+                CheckCategory.MOVEMENT,
+                CheckSeverity.HIGH,
+                false,
+                "Detects sustained excess flying packet rate.");
         this.alertManager = alertManager;
         this.maxPackets = plugin.getConfig().getInt("checks.TimerA.max-flying-packets-per-second", 55);
         this.decayPerSecond = plugin.getConfig().getDouble("checks.TimerA.decay-per-second", 0.35D);

@@ -8,15 +8,27 @@ commands:
   poseidon:
     description: Poseidon staff command.
     aliases: [poseidonac, pac, psdn, pdn, ps, anticheat, anti, ac]
-    permission: poseidon.command
+    permission: poseidon.staff
   alerts:
     description: Toggle Poseidon staff alerts.
     aliases: [alert, palerts, palert, togglealerts, togalerts]
     permission: poseidon.alerts
 permissions:
-  poseidon.command:
-    description: Allows use of the Poseidon command.
+  poseidon.admin:
+    description: Allows full Poseidon administration.
+    default: op
+  poseidon.staff:
+    description: Allows use of staff inspection commands.
     default: op
   poseidon.alerts:
     description: Allows viewing anticheat alerts.
     default: op
+  poseidon.verbose:
+    description: Allows verbose anticheat alerts.
+    default: op
+  poseidon.reload:
+    description: Allows reloading Poseidon.
+    default: op
+  poseidon.bypass:
+    description: Exempts a player from future enforcement integrations.
+    default: false

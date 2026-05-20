@@ -3,6 +3,8 @@ package dev.codex.poseidon.check.impl;
 import dev.codex.poseidon.PoseidonPlugin;
 import dev.codex.poseidon.alert.AlertManager;
 import dev.codex.poseidon.check.Check;
+import dev.codex.poseidon.check.CheckCategory;
+import dev.codex.poseidon.check.CheckSeverity;
 import dev.codex.poseidon.data.PlayerData;
 import dev.codex.poseidon.packet.PacketContext;
 
@@ -14,8 +16,13 @@ public final class MoveACheck extends Check {
 
     public MoveACheck(PoseidonPlugin plugin, AlertManager alertManager) {
         super("MoveA",
-                plugin.getConfig().getBoolean("checks.MoveA.enabled", true),
-                plugin.getConfig().getDouble("checks.MoveA.alert-vl", 2.0D));
+                plugin,
+                true,
+                2.0D,
+                CheckCategory.MOVEMENT,
+                CheckSeverity.MEDIUM,
+                false,
+                "Conservative impossible movement delta guard.");
         this.alertManager = alertManager;
         this.maxHorizontalDelta = plugin.getConfig().getDouble("checks.MoveA.max-horizontal-delta", 12.0D);
         this.maxVerticalDelta = plugin.getConfig().getDouble("checks.MoveA.max-vertical-delta", 12.0D);

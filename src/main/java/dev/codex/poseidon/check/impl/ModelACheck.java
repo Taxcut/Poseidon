@@ -3,6 +3,8 @@ package dev.codex.poseidon.check.impl;
 import dev.codex.poseidon.PoseidonPlugin;
 import dev.codex.poseidon.alert.AlertManager;
 import dev.codex.poseidon.check.Check;
+import dev.codex.poseidon.check.CheckCategory;
+import dev.codex.poseidon.check.CheckSeverity;
 import dev.codex.poseidon.data.PlayerData;
 import dev.codex.poseidon.packet.PacketContext;
 
@@ -14,8 +16,13 @@ public final class ModelACheck extends Check {
 
     public ModelACheck(PoseidonPlugin plugin, AlertManager alertManager) {
         super("ModelA",
-                plugin.getConfig().getBoolean("checks.ModelA.enabled", true),
-                plugin.getConfig().getDouble("checks.ModelA.alert-vl", 3.0D));
+                plugin,
+                true,
+                3.0D,
+                CheckCategory.EXPERIMENTAL,
+                CheckSeverity.MEDIUM,
+                true,
+                "Confidence-layer alert from combined behavior score.");
         this.alertManager = alertManager;
         this.scoreThreshold = plugin.getConfig().getDouble("checks.ModelA.score-threshold", 0.78D);
         this.minConfidence = plugin.getConfig().getDouble("checks.ModelA.min-confidence", 0.25D);

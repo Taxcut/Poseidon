@@ -4,6 +4,8 @@ import com.comphenix.protocol.PacketType;
 import dev.codex.poseidon.PoseidonPlugin;
 import dev.codex.poseidon.alert.AlertManager;
 import dev.codex.poseidon.check.Check;
+import dev.codex.poseidon.check.CheckCategory;
+import dev.codex.poseidon.check.CheckSeverity;
 import dev.codex.poseidon.data.PlayerData;
 import dev.codex.poseidon.packet.PacketContext;
 
@@ -15,8 +17,13 @@ public final class WorldInteractionACheck extends Check {
 
     public WorldInteractionACheck(PoseidonPlugin plugin, AlertManager alertManager) {
         super("WorldInteractionA",
-                plugin.getConfig().getBoolean("checks.WorldInteractionA.enabled", true),
-                plugin.getConfig().getDouble("checks.WorldInteractionA.alert-vl", 4.0D));
+                plugin,
+                false,
+                4.0D,
+                CheckCategory.WORLD,
+                CheckSeverity.MEDIUM,
+                false,
+                "Legacy aggregate world interaction check.");
         this.alertManager = alertManager;
         this.maxPlacesPerSecond = plugin.getConfig().getInt("checks.WorldInteractionA.max-places-per-second", 14);
         this.maxBridgeHorizontal = plugin.getConfig().getDouble("checks.WorldInteractionA.max-bridge-horizontal", 0.34D);

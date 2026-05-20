@@ -35,6 +35,7 @@ public final class CloudSyncManager implements BehaviorSignalListener {
     }
 
     public void start() {
+        stop();
         if (!isEnabled()) {
             return;
         }

@@ -6,13 +6,16 @@ import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.reflect.StructureModifier;
 import dev.codex.poseidon.data.PlayerData;
 import dev.codex.poseidon.data.PlayerDataManager;
+import dev.codex.poseidon.replay.ReplayRecorder;
 import org.bukkit.entity.Player;
 
 public final class ServerPacketProcessor {
     private final PlayerDataManager dataManager;
+    private final ReplayRecorder replayRecorder;
 
-    public ServerPacketProcessor(PlayerDataManager dataManager) {
+    public ServerPacketProcessor(PlayerDataManager dataManager, ReplayRecorder replayRecorder) {
         this.dataManager = dataManager;
+        this.replayRecorder = replayRecorder;
     }
 
     public void process(PacketEvent event) {
@@ -43,7 +46,11 @@ public final class ServerPacketProcessor {
         int velocityY = read(packet.getIntegers(), 2, Integer.valueOf(0)).intValue();
         int velocityZ = read(packet.getIntegers(), 3, Integer.valueOf(0)).intValue();
 
-        data.recordVelocity(velocityX / 8000.0D, velocityY / 8000.0D, velocityZ / 8000.0D, now);
+        double x = velocityX / 8000.0D;
+        double y = velocityY / 8000.0D;
+        double z = velocityZ / 8000.0D;
+        data.recordVelocity(x, y, z, now);
+        replayRecorder.recordVelocity(player, data, x, y, z, now);
     }
 
     private void processCorrection(PlayerData data, long now) {

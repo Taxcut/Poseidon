@@ -35,7 +35,9 @@ public final class RuntimeStateSampler {
                             isInWeb(player),
                             isOnIce(player),
                             isOnClimbable(player),
-                            isOnSoulSand(player));
+                            isOnSoulSand(player),
+                            isOnSlime(player),
+                            isNearComplexCollision(player));
                 }
             }
         }, 1L, interval);
@@ -74,6 +76,23 @@ public final class RuntimeStateSampler {
         return blockBelow(player).getType() == Material.SOUL_SAND;
     }
 
+    private static boolean isOnSlime(Player player) {
+        return blockBelow(player).getType() == Material.SLIME_BLOCK;
+    }
+
+    private static boolean isNearComplexCollision(Player player) {
+        Location base = player.getLocation();
+        for (double x = -0.31D; x <= 0.31D; x += 0.31D) {
+            for (double z = -0.31D; z <= 0.31D; z += 0.31D) {
+                Material below = base.clone().add(x, -0.01D, z).getBlock().getType();
+                if (isComplexCollision(below)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     private static Block blockBelow(Player player) {
         Location location = player.getLocation().clone().subtract(0.0D, 0.01D, 0.0D);
         return location.getBlock();
@@ -88,5 +107,21 @@ public final class RuntimeStateSampler {
 
     private static boolean isClimbable(Material material) {
         return material == Material.LADDER || material == Material.VINE;
+    }
+
+    private static boolean isComplexCollision(Material material) {
+        String name = material.name();
+        return name.contains("STAIRS")
+                || name.contains("STEP")
+                || name.contains("SLAB")
+                || name.contains("FENCE")
+                || name.contains("WALL")
+                || material == Material.CARPET
+                || material == Material.CAKE_BLOCK
+                || material == Material.BED_BLOCK
+                || material == Material.TRAP_DOOR
+                || material == Material.PISTON_BASE
+                || material == Material.PISTON_EXTENSION
+                || material == Material.PISTON_STICKY_BASE;
     }
 }

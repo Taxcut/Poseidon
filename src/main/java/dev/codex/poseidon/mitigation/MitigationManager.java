@@ -162,7 +162,8 @@ public final class MitigationManager implements BehaviorSignalListener, Listener
     }
 
     public boolean isEnforcing() {
-        return "enforce".equalsIgnoreCase(plugin.getConfig().getString("mitigations.mode", "monitor"));
+        String mode = plugin.getConfig().getString("mitigations.mode", "monitor");
+        return "enforce".equalsIgnoreCase(mode) || "production".equalsIgnoreCase(mode);
     }
 
     private void decay() {

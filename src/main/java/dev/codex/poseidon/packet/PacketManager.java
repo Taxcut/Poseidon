@@ -16,36 +16,43 @@ import dev.codex.poseidon.data.PlayerDataManager;
 import dev.codex.poseidon.processor.CombatProcessor;
 import dev.codex.poseidon.processor.MovementProcessor;
 import dev.codex.poseidon.processor.ServerPacketProcessor;
+import dev.codex.poseidon.replay.ReplayRecorder;
 import dev.codex.poseidon.transaction.TransactionManager;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 public final class PacketManager {
     private final PoseidonPlugin plugin;
     private final PlayerDataManager dataManager;
     private final CheckManager checkManager;
     private final TransactionManager transactionManager;
+    private final ReplayRecorder replayRecorder;
     private final ProtocolManager protocolManager;
     private final MovementProcessor movementProcessor;
     private final CombatProcessor combatProcessor;
     private final ServerPacketProcessor serverPacketProcessor;
+    private final AtomicLong totalPacketNanos = new AtomicLong();
+    private final AtomicLong packetExecutions = new AtomicLong();
     private PacketAdapter clientListener;
     private PacketAdapter serverListener;
 
     public PacketManager(PoseidonPlugin plugin,
                          PlayerDataManager dataManager,
                          CheckManager checkManager,
-                         TransactionManager transactionManager) {
+                         TransactionManager transactionManager,
+                         ReplayRecorder replayRecorder) {
         this.plugin = plugin;
         this.dataManager = dataManager;
         this.checkManager = checkManager;
         this.transactionManager = transactionManager;
+        this.replayRecorder = replayRecorder;
         this.protocolManager = ProtocolLibrary.getProtocolManager();
         this.movementProcessor = new MovementProcessor();
         this.combatProcessor = new CombatProcessor();
-        this.serverPacketProcessor = new ServerPacketProcessor(dataManager);
+        this.serverPacketProcessor = new ServerPacketProcessor(dataManager, replayRecorder);
     }
 
     public void register() {
@@ -57,6 +64,9 @@ public final class PacketManager {
                 PacketType.Play.Client.USE_ENTITY,
                 PacketType.Play.Client.WINDOW_CLICK,
                 PacketType.Play.Client.BLOCK_PLACE,
+                PacketType.Play.Client.CUSTOM_PAYLOAD,
+                PacketType.Play.Client.UPDATE_SIGN,
+                PacketType.Play.Client.TAB_COMPLETE,
                 PacketType.Play.Client.TRANSACTION);
 
         if (clientTypes.length > 0) {
@@ -98,6 +108,16 @@ public final class PacketManager {
     }
 
     private void handleClientPacket(PacketEvent event) {
+        long started = System.nanoTime();
+        try {
+            handleClientPacketMeasured(event);
+        } finally {
+            totalPacketNanos.addAndGet(System.nanoTime() - started);
+            packetExecutions.incrementAndGet();
+        }
+    }
+
+    private void handleClientPacketMeasured(PacketEvent event) {
         Player player = event.getPlayer();
         if (player == null) {
             return;
@@ -119,6 +139,15 @@ public final class PacketManager {
         PacketContext context = buildContext(player, data, type, packet, now);
         checkManager.handle(context);
         postProcess(context);
+        replayRecorder.record(context);
+    }
+
+    public double averagePacketMicros() {
+        long count = packetExecutions.get();
+        if (count <= 0L) {
+            return 0.0D;
+        }
+        return totalPacketNanos.get() / (double) count / 1000.0D;
     }
 
     private PacketContext buildContext(Player player, PlayerData data, PacketType type, PacketContainer packet, long now) {

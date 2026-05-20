@@ -4,6 +4,8 @@ import com.comphenix.protocol.PacketType;
 import dev.codex.poseidon.PoseidonPlugin;
 import dev.codex.poseidon.alert.AlertManager;
 import dev.codex.poseidon.check.Check;
+import dev.codex.poseidon.check.CheckCategory;
+import dev.codex.poseidon.check.CheckSeverity;
 import dev.codex.poseidon.packet.PacketContext;
 
 public final class AutoClickerACheck extends Check {
@@ -12,8 +14,13 @@ public final class AutoClickerACheck extends Check {
 
     public AutoClickerACheck(PoseidonPlugin plugin, AlertManager alertManager) {
         super("AutoClickerA",
-                plugin.getConfig().getBoolean("checks.AutoClickerA.enabled", true),
-                plugin.getConfig().getDouble("checks.AutoClickerA.alert-vl", 5.0D));
+                plugin,
+                true,
+                5.0D,
+                CheckCategory.COMBAT,
+                CheckSeverity.MEDIUM,
+                false,
+                "Combat click rate and burst detection.");
         this.alertManager = alertManager;
         this.maxCps = plugin.getConfig().getInt("checks.AutoClickerA.max-cps", 24);
     }

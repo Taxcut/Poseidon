@@ -3,6 +3,8 @@ package dev.codex.poseidon.check.impl;
 import dev.codex.poseidon.PoseidonPlugin;
 import dev.codex.poseidon.alert.AlertManager;
 import dev.codex.poseidon.check.Check;
+import dev.codex.poseidon.check.CheckCategory;
+import dev.codex.poseidon.check.CheckSeverity;
 import dev.codex.poseidon.packet.PacketContext;
 
 public final class BadPacketsBCheck extends Check {
@@ -11,8 +13,13 @@ public final class BadPacketsBCheck extends Check {
 
     public BadPacketsBCheck(PoseidonPlugin plugin, AlertManager alertManager) {
         super("BadPacketsB",
-                plugin.getConfig().getBoolean("checks.BadPacketsB.enabled", true),
-                plugin.getConfig().getDouble("checks.BadPacketsB.alert-vl", 1.0D));
+                plugin,
+                true,
+                1.0D,
+                CheckCategory.PACKET,
+                CheckSeverity.CRITICAL,
+                false,
+                "Rejects invalid or out-of-world movement coordinates.");
         this.alertManager = alertManager;
         this.maxCoordinate = plugin.getConfig().getDouble("checks.BadPacketsB.max-coordinate", 32000000.0D);
     }

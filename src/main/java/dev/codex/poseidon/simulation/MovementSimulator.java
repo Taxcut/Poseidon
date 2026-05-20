@@ -21,6 +21,14 @@ public final class MovementSimulator {
         double maxUpward = (data.wasOnGround() ? 0.62D : 0.42D) * ticks + verticalBuffer;
         double maxDownward = 0.98D * ticks + verticalBuffer;
 
+        if (data.isSprinting()) {
+            baseHorizontal *= 1.22D;
+        }
+
+        if (data.isSneaking()) {
+            baseHorizontal *= 0.55D;
+        }
+
         if (data.isInWeb()) {
             baseHorizontal = Math.max(baseHorizontal, 0.18D);
             maxUpward = Math.max(maxUpward, 0.25D * ticks + verticalBuffer);
@@ -35,6 +43,17 @@ public final class MovementSimulator {
 
         if (data.isOnIce()) {
             baseHorizontal *= 1.45D;
+        }
+
+        if (data.isOnSlime()) {
+            maxUpward += 0.45D;
+            maxDownward += 0.45D;
+        }
+
+        if (data.isNearComplexCollision()) {
+            baseHorizontal += 0.16D;
+            maxUpward += 0.20D;
+            maxDownward += 0.20D;
         }
 
         if (data.isOnSoulSand()) {

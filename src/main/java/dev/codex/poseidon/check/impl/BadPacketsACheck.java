@@ -3,6 +3,8 @@ package dev.codex.poseidon.check.impl;
 import dev.codex.poseidon.PoseidonPlugin;
 import dev.codex.poseidon.alert.AlertManager;
 import dev.codex.poseidon.check.Check;
+import dev.codex.poseidon.check.CheckCategory;
+import dev.codex.poseidon.check.CheckSeverity;
 import dev.codex.poseidon.packet.PacketContext;
 
 public final class BadPacketsACheck extends Check {
@@ -11,8 +13,13 @@ public final class BadPacketsACheck extends Check {
 
     public BadPacketsACheck(PoseidonPlugin plugin, AlertManager alertManager) {
         super("BadPacketsA",
-                plugin.getConfig().getBoolean("checks.BadPacketsA.enabled", true),
-                plugin.getConfig().getDouble("checks.BadPacketsA.alert-vl", 1.0D));
+                plugin,
+                true,
+                1.0D,
+                CheckCategory.PACKET,
+                CheckSeverity.CRITICAL,
+                false,
+                "Rejects impossible rotation values such as invalid pitch.");
         this.alertManager = alertManager;
         this.maxPitch = plugin.getConfig().getDouble("checks.BadPacketsA.max-pitch", 90.0D);
     }

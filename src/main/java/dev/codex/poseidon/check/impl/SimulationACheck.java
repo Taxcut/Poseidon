@@ -3,6 +3,8 @@ package dev.codex.poseidon.check.impl;
 import dev.codex.poseidon.PoseidonPlugin;
 import dev.codex.poseidon.alert.AlertManager;
 import dev.codex.poseidon.check.Check;
+import dev.codex.poseidon.check.CheckCategory;
+import dev.codex.poseidon.check.CheckSeverity;
 import dev.codex.poseidon.data.PlayerData;
 import dev.codex.poseidon.packet.PacketContext;
 import dev.codex.poseidon.simulation.MovementEnvelope;
@@ -15,8 +17,13 @@ public final class SimulationACheck extends Check {
 
     public SimulationACheck(PoseidonPlugin plugin, AlertManager alertManager) {
         super("SimulationA",
-                plugin.getConfig().getBoolean("checks.SimulationA.enabled", true),
-                plugin.getConfig().getDouble("checks.SimulationA.alert-vl", 5.0D));
+                plugin,
+                true,
+                5.0D,
+                CheckCategory.EXPERIMENTAL,
+                CheckSeverity.HIGH,
+                true,
+                "Experimental movement prediction envelope for 1.7/1.8 physics.");
         this.alertManager = alertManager;
         double tolerance = toleranceMultiplier(plugin.getConfig().getString("settings.movement-tolerance", "BALANCED"));
         this.simulator = new MovementSimulator(

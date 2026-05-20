@@ -4,6 +4,8 @@ import com.comphenix.protocol.PacketType;
 import dev.codex.poseidon.PoseidonPlugin;
 import dev.codex.poseidon.alert.AlertManager;
 import dev.codex.poseidon.check.Check;
+import dev.codex.poseidon.check.CheckCategory;
+import dev.codex.poseidon.check.CheckSeverity;
 import dev.codex.poseidon.data.PlayerData;
 import dev.codex.poseidon.packet.PacketContext;
 
@@ -15,8 +17,13 @@ public final class InventoryACheck extends Check {
 
     public InventoryACheck(PoseidonPlugin plugin, AlertManager alertManager) {
         super("InventoryA",
-                plugin.getConfig().getBoolean("checks.InventoryA.enabled", true),
-                plugin.getConfig().getDouble("checks.InventoryA.alert-vl", 4.0D));
+                plugin,
+                false,
+                4.0D,
+                CheckCategory.INVENTORY,
+                CheckSeverity.MEDIUM,
+                false,
+                "Legacy aggregate inventory behavior check.");
         this.alertManager = alertManager;
         this.maxClicksPerSecond = plugin.getConfig().getInt("checks.InventoryA.max-clicks-per-second", 18);
         this.maxMovingHorizontal = plugin.getConfig().getDouble("checks.InventoryA.max-moving-horizontal", 0.35D);

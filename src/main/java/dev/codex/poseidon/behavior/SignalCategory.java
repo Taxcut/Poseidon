@@ -25,10 +25,11 @@ public enum SignalCategory {
         if (lower.startsWith("reach") || lower.startsWith("auto") || lower.startsWith("aim") || lower.startsWith("velocity")) {
             return COMBAT;
         }
-        if (lower.startsWith("inventory")) {
+        if (lower.startsWith("inventory") || lower.startsWith("fastclick") || lower.startsWith("combatinventory")) {
             return INVENTORY;
         }
-        if (lower.startsWith("world") || lower.startsWith("scaffold")) {
+        if (lower.startsWith("world") || lower.startsWith("scaffold") || lower.startsWith("fastplace")
+                || lower.startsWith("impossibleplace") || lower.startsWith("blockraytrace")) {
             return WORLD;
         }
         if (lower.startsWith("timer")) {
@@ -37,7 +38,8 @@ public enum SignalCategory {
         if (lower.startsWith("latency")) {
             return LATENCY;
         }
-        if (lower.startsWith("badpacket")) {
+        if (lower.startsWith("badpacket") || lower.startsWith("payload") || lower.startsWith("signexploit")
+                || lower.startsWith("packetspam")) {
             return PACKET;
         }
         if (lower.startsWith("model") || lower.startsWith("behavior")) {

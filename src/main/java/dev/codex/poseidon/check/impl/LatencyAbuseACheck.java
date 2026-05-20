@@ -4,6 +4,8 @@ import com.comphenix.protocol.PacketType;
 import dev.codex.poseidon.PoseidonPlugin;
 import dev.codex.poseidon.alert.AlertManager;
 import dev.codex.poseidon.check.Check;
+import dev.codex.poseidon.check.CheckCategory;
+import dev.codex.poseidon.check.CheckSeverity;
 import dev.codex.poseidon.data.PlayerData;
 import dev.codex.poseidon.packet.PacketContext;
 
@@ -16,8 +18,13 @@ public final class LatencyAbuseACheck extends Check {
 
     public LatencyAbuseACheck(PoseidonPlugin plugin, AlertManager alertManager) {
         super("LatencyAbuseA",
-                plugin.getConfig().getBoolean("checks.LatencyAbuseA.enabled", true),
-                plugin.getConfig().getDouble("checks.LatencyAbuseA.alert-vl", 999.0D));
+                plugin,
+                true,
+                999.0D,
+                CheckCategory.LATENCY,
+                CheckSeverity.MEDIUM,
+                false,
+                "Detects transaction delay and lag-compensates other checks.");
         this.alertManager = alertManager;
         this.alert = plugin.getConfig().getBoolean("checks.LatencyAbuseA.alert", false);
         this.signalIntervalMs = plugin.getConfig().getLong("checks.LatencyAbuseA.signal-interval-ms", 1000L);

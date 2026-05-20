@@ -32,7 +32,7 @@ The plugin jar is written to `target/Poseidon.jar`.
 
 ## Systems
 
-See [SYSTEMS.md](docs/SYSTEMS.md) for the current architecture, [PERFORMANCE.md](docs/PERFORMANCE.md) for the 100-player performance profile, [COMPLETION_AUDIT.md](docs/COMPLETION_AUDIT.md) for what still needs production work, and [POLAR_RESEARCH.md](docs/POLAR_RESEARCH.md) for the public Polar feature map Poseidon is using as inspiration.
+See [SYSTEMS.md](docs/SYSTEMS.md) for the current architecture, [PERFORMANCE.md](docs/PERFORMANCE.md) for the 100-player performance profile, [COMPLETION_AUDIT.md](docs/COMPLETION_AUDIT.md) for what still needs production work, [TESTING.md](docs/TESTING.md) for live testing, and [POLAR_RESEARCH.md](docs/POLAR_RESEARCH.md) for the public Polar feature map Poseidon is using as inspiration.
 
 ## Runtime
 

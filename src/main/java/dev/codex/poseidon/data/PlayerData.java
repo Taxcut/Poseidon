@@ -24,9 +24,12 @@ public final class PlayerData {
     private final Map<String, Long> lastAlerts = Collections.synchronizedMap(new HashMap<String, Long>());
     private final Queue<Long> flyingPackets = new ArrayDeque<Long>();
     private final Queue<Long> attackPackets = new ArrayDeque<Long>();
+    private final Queue<Long> attackDelays = new ArrayDeque<Long>();
     private final Queue<Long> inventoryClickPackets = new ArrayDeque<Long>();
     private final Queue<Long> blockPlacePackets = new ArrayDeque<Long>();
+    private final Queue<Long> allPackets = new ArrayDeque<Long>();
     private final Queue<PositionSnapshot> positionHistory = new ArrayDeque<PositionSnapshot>();
+    private final Queue<RotationSample> rotationSamples = new ArrayDeque<RotationSample>();
     private final AtomicInteger transactionCounter = new AtomicInteger(1);
 
     private volatile long transactionPing = -1L;
@@ -35,10 +38,15 @@ public final class PlayerData {
     private volatile long lastFlyingTimestamp;
     private volatile long lastPositionTimestamp;
     private volatile long lastAttackTimestamp;
+    private volatile long lastAttackPacketTimestamp;
+    private volatile long lastPacketTimestamp;
+    private volatile long lastInventoryOpen;
+    private volatile long lastInventoryClose;
     private volatile long lastTeleportTimestamp;
     private volatile int lastAttackedEntityId = -1;
     private volatile String lastWorldName = "";
     private volatile VelocitySnapshot lastVelocity;
+    private volatile long lastVelocityFlag;
     private volatile MitigationLevel mitigationLevel = MitigationLevel.NONE;
     private volatile double mitigationScore;
     private volatile long mitigationExpiresAt;
@@ -55,6 +63,9 @@ public final class PlayerData {
     private volatile boolean flying;
     private volatile boolean allowFlight;
     private volatile boolean insideVehicle;
+    private volatile boolean sprinting;
+    private volatile boolean sneaking;
+    private volatile boolean inventoryOpen;
     private volatile boolean latencyCompensated;
     private volatile long lastLatencyCompensation;
     private volatile long lastLatencySignal;
@@ -63,6 +74,8 @@ public final class PlayerData {
     private volatile boolean onIce;
     private volatile boolean onClimbable;
     private volatile boolean onSoulSand;
+    private volatile boolean onSlime;
+    private volatile boolean nearComplexCollision;
 
     private volatile boolean onGround;
     private volatile boolean lastOnGround;
@@ -123,6 +136,7 @@ public final class PlayerData {
         this.lastHorizontalDelta = Math.sqrt(lastDeltaX * lastDeltaX + lastDeltaZ * lastDeltaZ);
         this.lastYaw = this.yaw;
         this.lastPitch = this.pitch;
+        recordRotationSample(yaw - this.yaw, pitch - this.pitch, timestamp);
         this.lastOnGround = this.onGround;
         this.x = x;
         this.y = y;
@@ -138,6 +152,7 @@ public final class PlayerData {
     public void updateRotation(float yaw, float pitch, boolean onGround) {
         this.lastYaw = this.yaw;
         this.lastPitch = this.pitch;
+        recordRotationSample(yaw - this.yaw, pitch - this.pitch, System.currentTimeMillis());
         this.yaw = yaw;
         this.pitch = pitch;
         this.lastOnGround = this.onGround;
@@ -195,10 +210,17 @@ public final class PlayerData {
     }
 
     public double addViolation(String checkName, double amount) {
+        return addViolation(checkName, amount, 100.0D);
+    }
+
+    public double addViolation(String checkName, double amount, double maxViolation) {
         synchronized (violations) {
             double value = amount;
             if (violations.containsKey(checkName)) {
                 value += violations.get(checkName).doubleValue();
+            }
+            if (maxViolation > 0.0D) {
+                value = Math.min(maxViolation, value);
             }
             violations.put(checkName, value);
             return value;
@@ -253,6 +275,12 @@ public final class PlayerData {
     public Map<String, Double> getViolations() {
         synchronized (violations) {
             return new HashMap<String, Double>(violations);
+        }
+    }
+
+    public void resetViolations() {
+        synchronized (violations) {
+            violations.clear();
         }
     }
 
@@ -314,6 +342,10 @@ public final class PlayerData {
     }
 
     public int recordAttackPacket(long timestamp) {
+        if (lastAttackPacketTimestamp > 0L) {
+            recordRollingPacket(attackDelays, Math.max(0L, timestamp - lastAttackPacketTimestamp), 50, Long.MAX_VALUE);
+        }
+        lastAttackPacketTimestamp = timestamp;
         return recordRollingPacket(attackPackets, timestamp);
     }
 
@@ -323,6 +355,17 @@ public final class PlayerData {
 
     public int recordBlockPlacePacket(long timestamp) {
         return recordRollingPacket(blockPlacePackets, timestamp);
+    }
+
+    public int recordAnyPacket(long timestamp) {
+        lastPacketTimestamp = timestamp;
+        return recordRollingPacket(allPackets, timestamp);
+    }
+
+    public ClickStats getClickStats() {
+        synchronized (attackDelays) {
+            return ClickStats.from(attackDelays);
+        }
     }
 
     public int getLastAttackedEntityId() {
@@ -367,6 +410,8 @@ public final class PlayerData {
         this.flying = player.isFlying();
         this.allowFlight = player.getAllowFlight();
         this.insideVehicle = player.isInsideVehicle();
+        this.sprinting = player.isSprinting();
+        this.sneaking = player.isSneaking();
     }
 
     public void updateEnvironmentState(boolean inLiquid, boolean inWeb, boolean onIce, boolean onClimbable, boolean onSoulSand) {
@@ -377,12 +422,32 @@ public final class PlayerData {
         this.onSoulSand = onSoulSand;
     }
 
+    public void updateEnvironmentState(boolean inLiquid,
+                                       boolean inWeb,
+                                       boolean onIce,
+                                       boolean onClimbable,
+                                       boolean onSoulSand,
+                                       boolean onSlime,
+                                       boolean nearComplexCollision) {
+        updateEnvironmentState(inLiquid, inWeb, onIce, onClimbable, onSoulSand);
+        this.onSlime = onSlime;
+        this.nearComplexCollision = nearComplexCollision;
+    }
+
     public void recordVelocity(double x, double y, double z, long timestamp) {
         this.lastVelocity = new VelocitySnapshot(x, y, z, timestamp);
     }
 
     public VelocitySnapshot getLastVelocity() {
         return lastVelocity;
+    }
+
+    public boolean canVelocityFlag(long timestamp, long intervalMs) {
+        if (timestamp - lastVelocityFlag < intervalMs) {
+            return false;
+        }
+        lastVelocityFlag = timestamp;
+        return true;
     }
 
     public String getLastVelocitySummary() {
@@ -436,6 +501,14 @@ public final class PlayerData {
 
     public boolean isInsideVehicle() {
         return insideVehicle;
+    }
+
+    public boolean isSprinting() {
+        return sprinting;
+    }
+
+    public boolean isSneaking() {
+        return sneaking;
     }
 
     public boolean isLatencyCompensated() {
@@ -523,6 +596,39 @@ public final class PlayerData {
         return onSoulSand;
     }
 
+    public boolean isOnSlime() {
+        return onSlime;
+    }
+
+    public boolean isNearComplexCollision() {
+        return nearComplexCollision;
+    }
+
+    public boolean isInventoryOpen() {
+        return inventoryOpen;
+    }
+
+    public long getLastInventoryOpen() {
+        return lastInventoryOpen;
+    }
+
+    public long getLastInventoryClose() {
+        return lastInventoryClose;
+    }
+
+    public void setInventoryOpen(boolean inventoryOpen, long timestamp) {
+        this.inventoryOpen = inventoryOpen;
+        if (inventoryOpen) {
+            this.lastInventoryOpen = timestamp;
+        } else {
+            this.lastInventoryClose = timestamp;
+        }
+    }
+
+    public long getLastPacketTimestamp() {
+        return lastPacketTimestamp;
+    }
+
     public String getLastWorldName() {
         return lastWorldName;
     }
@@ -599,6 +705,12 @@ public final class PlayerData {
         return lastPitch;
     }
 
+    public RotationStats getRotationStats() {
+        synchronized (rotationSamples) {
+            return RotationStats.from(rotationSamples);
+        }
+    }
+
     private void recordPositionSnapshot(double x, double y, double z, float yaw, float pitch, boolean onGround, long timestamp) {
         synchronized (positionHistory) {
             positionHistory.add(new PositionSnapshot(x, y, z, yaw, pitch, onGround, timestamp));
@@ -607,6 +719,33 @@ public final class PlayerData {
                 positionHistory.poll();
             }
         }
+    }
+
+    private void recordRotationSample(double yawDelta, double pitchDelta, long timestamp) {
+        if (!hasPosition && lastPositionTimestamp <= 0L) {
+            return;
+        }
+        synchronized (rotationSamples) {
+            rotationSamples.add(new RotationSample(wrapDegrees(yawDelta), pitchDelta, timestamp));
+            long cutoff = timestamp - 3000L;
+            while (!rotationSamples.isEmpty() && rotationSamples.peek().timestamp < cutoff) {
+                rotationSamples.poll();
+            }
+            while (rotationSamples.size() > 80) {
+                rotationSamples.poll();
+            }
+        }
+    }
+
+    private static double wrapDegrees(double value) {
+        value %= 360.0D;
+        if (value >= 180.0D) {
+            value -= 360.0D;
+        }
+        if (value < -180.0D) {
+            value += 360.0D;
+        }
+        return value;
     }
 
     private static int amplifier(Player player, PotionEffectType type) {
@@ -619,13 +758,183 @@ public final class PlayerData {
     }
 
     private static int recordRollingPacket(Queue<Long> queue, long timestamp) {
+        return recordRollingPacket(queue, timestamp, Integer.MAX_VALUE, 1000L);
+    }
+
+    private static int recordRollingPacket(Queue<Long> queue, long timestamp, int maxSize, long windowMs) {
         synchronized (queue) {
             queue.add(timestamp);
-            long cutoff = timestamp - 1000L;
-            while (!queue.isEmpty() && queue.peek() < cutoff) {
+            if (windowMs != Long.MAX_VALUE) {
+                long cutoff = timestamp - windowMs;
+                while (!queue.isEmpty() && queue.peek() < cutoff) {
+                    queue.poll();
+                }
+            }
+            while (queue.size() > maxSize) {
                 queue.poll();
             }
             return queue.size();
+        }
+    }
+
+    private static final class RotationSample {
+        private final double yawDelta;
+        private final double pitchDelta;
+        private final long timestamp;
+
+        private RotationSample(double yawDelta, double pitchDelta, long timestamp) {
+            this.yawDelta = yawDelta;
+            this.pitchDelta = pitchDelta;
+            this.timestamp = timestamp;
+        }
+    }
+
+    public static final class ClickStats {
+        private final int samples;
+        private final double average;
+        private final double variance;
+        private final double standardDeviation;
+        private final double duplicateRatio;
+
+        private ClickStats(int samples, double average, double variance, double standardDeviation, double duplicateRatio) {
+            this.samples = samples;
+            this.average = average;
+            this.variance = variance;
+            this.standardDeviation = standardDeviation;
+            this.duplicateRatio = duplicateRatio;
+        }
+
+        private static ClickStats from(Queue<Long> delays) {
+            int size = delays.size();
+            if (size == 0) {
+                return new ClickStats(0, 0.0D, 0.0D, 0.0D, 0.0D);
+            }
+            double sum = 0.0D;
+            Long last = null;
+            int duplicates = 0;
+            for (Long delay : delays) {
+                sum += delay.longValue();
+                if (last != null && Math.abs(delay.longValue() - last.longValue()) <= 1L) {
+                    duplicates++;
+                }
+                last = delay;
+            }
+            double average = sum / size;
+            double variance = 0.0D;
+            for (Long delay : delays) {
+                double offset = delay.longValue() - average;
+                variance += offset * offset;
+            }
+            variance /= size;
+            return new ClickStats(size, average, variance, Math.sqrt(variance), size <= 1 ? 0.0D : duplicates / (double) (size - 1));
+        }
+
+        public int getSamples() {
+            return samples;
+        }
+
+        public double getAverage() {
+            return average;
+        }
+
+        public double getVariance() {
+            return variance;
+        }
+
+        public double getStandardDeviation() {
+            return standardDeviation;
+        }
+
+        public double getDuplicateRatio() {
+            return duplicateRatio;
+        }
+    }
+
+    public static final class RotationStats {
+        private final int samples;
+        private final double maxYawDelta;
+        private final double maxPitchDelta;
+        private final double yawVariance;
+        private final double pitchVariance;
+        private final double duplicateRatio;
+
+        private RotationStats(int samples,
+                              double maxYawDelta,
+                              double maxPitchDelta,
+                              double yawVariance,
+                              double pitchVariance,
+                              double duplicateRatio) {
+            this.samples = samples;
+            this.maxYawDelta = maxYawDelta;
+            this.maxPitchDelta = maxPitchDelta;
+            this.yawVariance = yawVariance;
+            this.pitchVariance = pitchVariance;
+            this.duplicateRatio = duplicateRatio;
+        }
+
+        private static RotationStats from(Queue<RotationSample> samples) {
+            int size = samples.size();
+            if (size == 0) {
+                return new RotationStats(0, 0.0D, 0.0D, 0.0D, 0.0D, 0.0D);
+            }
+            double yawSum = 0.0D;
+            double pitchSum = 0.0D;
+            double maxYaw = 0.0D;
+            double maxPitch = 0.0D;
+            RotationSample last = null;
+            int duplicates = 0;
+            for (RotationSample sample : samples) {
+                double absYaw = Math.abs(sample.yawDelta);
+                double absPitch = Math.abs(sample.pitchDelta);
+                yawSum += absYaw;
+                pitchSum += absPitch;
+                maxYaw = Math.max(maxYaw, absYaw);
+                maxPitch = Math.max(maxPitch, absPitch);
+                if (last != null
+                        && Math.abs(absYaw - Math.abs(last.yawDelta)) < 0.001D
+                        && Math.abs(absPitch - Math.abs(last.pitchDelta)) < 0.001D) {
+                    duplicates++;
+                }
+                last = sample;
+            }
+            double yawAverage = yawSum / size;
+            double pitchAverage = pitchSum / size;
+            double yawVariance = 0.0D;
+            double pitchVariance = 0.0D;
+            for (RotationSample sample : samples) {
+                double yawOffset = Math.abs(sample.yawDelta) - yawAverage;
+                double pitchOffset = Math.abs(sample.pitchDelta) - pitchAverage;
+                yawVariance += yawOffset * yawOffset;
+                pitchVariance += pitchOffset * pitchOffset;
+            }
+            yawVariance /= size;
+            pitchVariance /= size;
+            return new RotationStats(size, maxYaw, maxPitch, yawVariance, pitchVariance,
+                    size <= 1 ? 0.0D : duplicates / (double) (size - 1));
+        }
+
+        public int getSamples() {
+            return samples;
+        }
+
+        public double getMaxYawDelta() {
+            return maxYawDelta;
+        }
+
+        public double getMaxPitchDelta() {
+            return maxPitchDelta;
+        }
+
+        public double getYawVariance() {
+            return yawVariance;
+        }
+
+        public double getPitchVariance() {
+            return pitchVariance;
+        }
+
+        public double getDuplicateRatio() {
+            return duplicateRatio;
         }
     }
 
