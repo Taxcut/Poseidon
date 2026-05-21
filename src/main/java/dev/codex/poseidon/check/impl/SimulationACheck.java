@@ -11,6 +11,7 @@ import dev.codex.poseidon.simulation.MovementEnvelope;
 import dev.codex.poseidon.simulation.MovementSimulator;
 
 public final class SimulationACheck extends Check {
+    private final PoseidonPlugin plugin;
     private final AlertManager alertManager;
     private final MovementSimulator simulator;
     private final long teleportExemptionMs;
@@ -24,6 +25,7 @@ public final class SimulationACheck extends Check {
                 CheckSeverity.HIGH,
                 true,
                 "Experimental movement prediction envelope for 1.7/1.8 physics.");
+        this.plugin = plugin;
         this.alertManager = alertManager;
         double tolerance = toleranceMultiplier(plugin.getConfig().getString("settings.movement-tolerance", "BALANCED"));
         this.simulator = new MovementSimulator(
@@ -42,6 +44,10 @@ public final class SimulationACheck extends Check {
 
         PlayerData data = context.getData();
         if (!data.hasPosition() || data.isFlying() || data.isAllowFlight() || data.isInsideVehicle()) {
+            return;
+        }
+
+        if (plugin.getExemptionManager().isMovementExempt(context.getPlayer(), data, context.getTimestamp())) {
             return;
         }
 

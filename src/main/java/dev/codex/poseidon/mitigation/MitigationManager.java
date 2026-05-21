@@ -26,6 +26,7 @@ public final class MitigationManager implements BehaviorSignalListener, Listener
     private final PoseidonPlugin plugin;
     private final PlayerDataManager dataManager;
     private final Map<UUID, ScoreState> scores = new ConcurrentHashMap<UUID, ScoreState>();
+    private final Map<UUID, Long> lastSetback = new ConcurrentHashMap<UUID, Long>();
     private BukkitTask decayTask;
 
     public MitigationManager(PoseidonPlugin plugin, PlayerDataManager dataManager) {
@@ -53,6 +54,11 @@ public final class MitigationManager implements BehaviorSignalListener, Listener
             decayTask.cancel();
             decayTask = null;
         }
+    }
+
+    public void clear(UUID uuid) {
+        scores.remove(uuid);
+        lastSetback.remove(uuid);
     }
 
     @Override
@@ -147,6 +153,15 @@ public final class MitigationManager implements BehaviorSignalListener, Listener
         if (data == null || data.getMitigationLevel() != MitigationLevel.HEAVY || event.getTo() == null) {
             return;
         }
+        long now = System.currentTimeMillis();
+        if (plugin.getExemptionManager().isMovementExempt(event.getPlayer(), data, now)) {
+            return;
+        }
+        Long last = lastSetback.get(event.getPlayer().getUniqueId());
+        long cooldown = plugin.getConfig().getLong("mitigations.actions.setback-cooldown-ms", 1500L);
+        if (last != null && now - last.longValue() < cooldown) {
+            return;
+        }
 
         double dx = event.getTo().getX() - event.getFrom().getX();
         double dz = event.getTo().getZ() - event.getFrom().getZ();
@@ -154,6 +169,7 @@ public final class MitigationManager implements BehaviorSignalListener, Listener
         double horizontal = Math.sqrt(dx * dx + dz * dz);
         if (horizontal > 0.80D || dy > 0.90D) {
             event.setTo(event.getFrom());
+            lastSetback.put(event.getPlayer().getUniqueId(), Long.valueOf(now));
         }
     }
 
@@ -172,6 +188,7 @@ public final class MitigationManager implements BehaviorSignalListener, Listener
             ScoreState state = scores.get(data.getUuid());
             if (state == null) {
                 data.clearMitigation();
+                scores.remove(data.getUuid());
                 continue;
             }
 

@@ -72,21 +72,21 @@ public final class PoseidonCommand implements CommandExecutor, TabCompleter {
             return true;
         }
         if (subCommand.equals("info")) {
-            if (!has(sender, "poseidon.staff")) {
+            if (!hasStaffOrDebug(sender)) {
                 return true;
             }
             handleInfo(sender, args);
             return true;
         }
         if (subCommand.equals("checks")) {
-            if (!has(sender, "poseidon.staff")) {
+            if (!hasStaffOrDebug(sender)) {
                 return true;
             }
             handleChecks(sender);
             return true;
         }
         if (subCommand.equals("check")) {
-            if (!has(sender, "poseidon.staff")) {
+            if (!hasStaffOrDebug(sender)) {
                 return true;
             }
             handleCheck(sender, args);
@@ -100,7 +100,7 @@ public final class PoseidonCommand implements CommandExecutor, TabCompleter {
             return true;
         }
         if (subCommand.equals("violations")) {
-            if (!has(sender, "poseidon.staff")) {
+            if (!hasStaffOrDebug(sender)) {
                 return true;
             }
             handleViolations(sender, args);
@@ -121,14 +121,14 @@ public final class PoseidonCommand implements CommandExecutor, TabCompleter {
             return true;
         }
         if (subCommand.equals("logs")) {
-            if (!has(sender, "poseidon.staff")) {
+            if (!hasStaffOrDebug(sender)) {
                 return true;
             }
             handleLogs(sender, args);
             return true;
         }
         if (subCommand.equals("cloud")) {
-            if (!has(sender, "poseidon.staff")) {
+            if (!hasStaffOrDebug(sender)) {
                 return true;
             }
             handleCloud(sender);
@@ -163,7 +163,7 @@ public final class PoseidonCommand implements CommandExecutor, TabCompleter {
             return filter(playerNames(), args[1]);
         }
         if (args.length == 2 && sub.equals("profile")) {
-            return filter(Arrays.asList("monitor", "staff-test", "production"), args[1]);
+            return filter(Arrays.asList("monitor", "staff-test", "production-safe", "aggressive-test"), args[1]);
         }
         if (args.length == 2 && sub.equals("alerts")) {
             return filter(Arrays.asList("on", "off"), args[1]);
@@ -182,7 +182,7 @@ public final class PoseidonCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(color("&7/" + label + " verbose [player] &8- &fToggle verbose alerts."));
         sender.sendMessage(color("&7/" + label + " violations <player> &8- &fShow violation map."));
         sender.sendMessage(color("&7/" + label + " reset <player> &8- &fClear violations."));
-        sender.sendMessage(color("&7/" + label + " profile <monitor|staff-test|production> &8- &fApply profile."));
+        sender.sendMessage(color("&7/" + label + " profile <monitor|staff-test|production-safe|aggressive-test> &8- &fApply profile."));
         sender.sendMessage(color("&7/" + label + " logs <player> &8- &fShow recent matching flag logs."));
         sender.sendMessage(color("&7/" + label + " alerts <on|off> &8- &fSet personal alerts."));
         sender.sendMessage(color("&8&m------------------------------------------"));
@@ -207,7 +207,10 @@ public final class PoseidonCommand implements CommandExecutor, TabCompleter {
         PlayerData data = dataManager.getOrCreate(target);
         sender.sendMessage(color("&8&m----------------&r &3Poseidon Debug &8&m----------------"));
         sender.sendMessage(color("&7Player: &f" + target.getName() + " &8(" + target.getUniqueId() + ")"));
-        sender.sendMessage(color("&7Transaction ping: &f" + data.getTransactionPing() + "ms &7pending=&f" + data.getPendingTransactionCount()));
+        sender.sendMessage(color("&7Transaction ping: &f" + data.getTransactionPing() + "ms"
+                + " &7avg=&f" + format(data.getAverageTransactionPing())
+                + " &7jitter=&f" + format(data.getTransactionPingJitter())
+                + " &7pending=&f" + data.getPendingTransactionCount()));
         sender.sendMessage(color("&7Latency compensation: &f" + data.isLatencyCompensated()));
         sender.sendMessage(color("&7Last velocity: &f" + data.getLastVelocitySummary()));
         sender.sendMessage(color("&7Position history: &f" + data.getPositionHistorySize() + " samples"));
@@ -312,12 +315,13 @@ public final class PoseidonCommand implements CommandExecutor, TabCompleter {
             return;
         }
         data.resetViolations();
+        plugin.getActionManager().clear(data.getUuid());
         sender.sendMessage(color("&8[&3Poseidon&8] &7Cleared violations for &f" + data.getName() + "&7."));
     }
 
     private void handleProfile(CommandSender sender, String[] args) {
         if (args.length < 2) {
-            sender.sendMessage(color("&cUsage: /poseidon profile <monitor|staff-test|production>"));
+            sender.sendMessage(color("&cUsage: /poseidon profile <monitor|staff-test|production-safe|aggressive-test>"));
             return;
         }
         if (!plugin.applyProfile(args[1])) {
@@ -412,6 +416,15 @@ public final class PoseidonCommand implements CommandExecutor, TabCompleter {
 
     private boolean has(CommandSender sender, String permission) {
         if (sender.hasPermission(permission) || sender.hasPermission("poseidon.admin")) {
+            return true;
+        }
+        sender.sendMessage(color("&cYou do not have permission."));
+        return false;
+    }
+
+    private boolean hasStaffOrDebug(CommandSender sender) {
+        if (sender.hasPermission("poseidon.staff") || sender.hasPermission("poseidon.debug")
+                || sender.hasPermission("poseidon.admin")) {
             return true;
         }
         sender.sendMessage(color("&cYou do not have permission."));

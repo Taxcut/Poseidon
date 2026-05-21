@@ -9,6 +9,7 @@ import dev.codex.poseidon.data.PlayerData;
 import dev.codex.poseidon.packet.PacketContext;
 
 public final class VelocityACheck extends Check {
+    private final PoseidonPlugin plugin;
     private final AlertManager alertManager;
     private final long minAgeMs;
     private final long maxAgeMs;
@@ -19,6 +20,7 @@ public final class VelocityACheck extends Check {
     public VelocityACheck(PoseidonPlugin plugin, AlertManager alertManager) {
         super("VelocityA", plugin, true, 5.0D, CheckCategory.COMBAT, CheckSeverity.HIGH, true,
                 "Experimental knockback response validation.");
+        this.plugin = plugin;
         this.alertManager = alertManager;
         this.minAgeMs = plugin.getConfig().getLong("checks.VelocityA.min-age-ms", 80L);
         this.maxAgeMs = plugin.getConfig().getLong("checks.VelocityA.max-age-ms", 900L);
@@ -44,9 +46,7 @@ public final class VelocityACheck extends Check {
             return;
         }
 
-        if (data.isInLiquid() || data.isInWeb() || data.isOnClimbable() || data.isNearComplexCollision()
-                || context.getTimestamp() - data.getLastTeleportTimestamp() < 1500L
-                || data.isLatencyCompensated()) {
+        if (plugin.getExemptionManager().isVelocityExempt(context.getPlayer(), data, context.getTimestamp())) {
             return;
         }
 

@@ -31,7 +31,9 @@ public final class CrossInstanceReputationManager implements BehaviorSignalListe
         this.reputationWriter = new AsyncLineWriter(plugin,
                 reputationFile(),
                 plugin.getConfig().getLong("cloud.cross-instance.flush-interval-ticks", 40L),
-                plugin.getConfig().getInt("cloud.cross-instance.max-lines-per-flush", 512));
+                plugin.getConfig().getInt("cloud.cross-instance.max-lines-per-flush", 512),
+                plugin.getConfig().getLong("cloud.cross-instance.max-file-bytes", 10485760L),
+                plugin.getConfig().getInt("cloud.cross-instance.max-backups", 2));
     }
 
     public void start() {

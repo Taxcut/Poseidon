@@ -3,6 +3,7 @@ settings:
   runtime-sampler-interval-ticks: 2
   transaction-interval-ticks: 20
   stale-transaction-ms: 10000
+  max-pending-transactions: 20
   verbose-default: false
   lag:
     tps-threshold: 18.5
@@ -15,6 +16,8 @@ settings:
     file: flags.jsonl
     flush-interval-ticks: 20
     max-lines-per-flush: 256
+    max-bytes: 10485760
+    max-backups: 3
   violation-decay:
     enabled: true
     interval-ticks: 20
@@ -30,6 +33,8 @@ cloud:
   flush-interval-ticks: 40
   max-lines-per-flush: 512
   max-posts-per-flush: 2
+  max-spool-bytes: 10485760
+  max-spool-backups: 2
   cross-instance:
     enabled: false
     reputation-file: cross-instance-reputation.jsonl
@@ -40,6 +45,17 @@ cloud:
     local-weight: 1.0
     remote-weight: 0.75
     minimum-risk: 10.0
+    max-file-bytes: 10485760
+    max-backups: 2
+
+exemptions:
+  join-ms: 3000
+  teleport-ms: 2000
+  respawn-ms: 3000
+  damage-ms: 350
+  block-place-ms: 300
+  block-break-ms: 300
+  high-transaction-ping-ms: 350
 
 mitigations:
   enabled: true
@@ -73,6 +89,7 @@ mitigations:
     cancel-inventory-at: MEDIUM
     cancel-world-at: HEAVY
     movement-setback-heavy: false
+    setback-cooldown-ms: 1500
 
 model:
   enabled: true
@@ -95,6 +112,23 @@ replay:
   file: replay-sessions.jsonl
   flush-interval-ticks: 40
   max-lines-per-flush: 512
+  max-bytes: 20971520
+  max-backups: 2
+
+punishments:
+  enabled: false
+  allow-experimental: false
+  command-cooldown-ms: 300000
+  require-recent:
+    flags: 3
+    window-ms: 60000
+    max-stored: 12
+  default-actions:
+    - "alert"
+    - "log"
+    - "staff-debug"
+  default-commands:
+    - "kick {player} Poseidon detected {check} ({type}) VL {vl}"
 
 profiles:
   default: monitor
@@ -104,8 +138,11 @@ profiles:
   staff-test:
     punish: false
     mitigations-mode: staff-test
-  production:
-    punish: configurable
+  production-safe:
+    punish: false
+    mitigations-mode: production
+  aggressive-test:
+    punish: false
     mitigations-mode: production
 
 checks:

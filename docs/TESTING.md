@@ -14,7 +14,7 @@ Expected output:
 
 - Build success
 - Jar at `target/Poseidon.jar`
-- No test sources are required yet
+- Unit tests pass for action recent-flag thresholds and transaction cleanup
 
 ## Server Startup Test
 
@@ -43,6 +43,7 @@ Run as an operator or staff user:
 - `/ac violations <player>`
 - `/ac reset <player>`
 - `/ac profile monitor`
+- `/ac profile production-safe`
 - `/ac logs <player>`
 - `/ac alerts on`
 
@@ -113,6 +114,27 @@ Keep these rules until you have real logs:
 
 - Keep all `punish` values false.
 - Keep `mitigations.mode: monitor`.
+- Keep `punishments.enabled: false`.
 - Treat all `experimental: true` checks as staff evidence only.
 - Do not punish from reach or velocity alone.
 - Do not tighten movement simulation until legit HCF movement has been logged.
+
+## Punishment Test
+
+Punishments are globally disabled by default:
+
+```yaml
+punishments:
+  enabled: false
+```
+
+When testing actions on a private server, use `aggressive-test` first and keep `punishments.enabled: false` until logs are clean. The action system supports placeholders:
+
+- `{player}`
+- `{uuid}`
+- `{check}`
+- `{type}`
+- `{vl}`
+- `{ping}`
+- `{tps}`
+- `{reason}`

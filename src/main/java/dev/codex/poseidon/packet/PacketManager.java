@@ -56,6 +56,7 @@ public final class PacketManager {
     }
 
     public void register() {
+        unregister();
         PacketType[] clientTypes = supportedTypes(
                 PacketType.Play.Client.FLYING,
                 PacketType.Play.Client.POSITION,

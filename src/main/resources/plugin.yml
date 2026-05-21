@@ -29,6 +29,9 @@ permissions:
   poseidon.reload:
     description: Allows reloading Poseidon.
     default: op
+  poseidon.debug:
+    description: Allows viewing Poseidon runtime and player debug state.
+    default: op
   poseidon.bypass:
     description: Exempts a player from future enforcement integrations.
     default: false

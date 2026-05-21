@@ -46,6 +46,10 @@ public final class ReachACheck extends Check {
         }
 
         PlayerData data = context.getData();
+        if (plugin.getExemptionManager().isCombatExempt(context.getPlayer(), data, context.getTimestamp())) {
+            return;
+        }
+
         if (!data.getLastWorldName().equals(targetData.getLastWorldName())) {
             return;
         }

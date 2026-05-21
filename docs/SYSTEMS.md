@@ -12,6 +12,7 @@ Consumers:
 - `CrossInstanceReputationManager` writes compact reputation records and imports them from a shared file.
 - `OnlineBehaviorModel` converts signals into decaying feature buckets and a score.
 - `MitigationManager` converts weighted signals plus cross-instance risk into player restrictions.
+- `ActionManager` evaluates per-check punish settings and command actions, but only when `punishments.enabled` is explicitly true.
 
 ## Reloadable Check Registry
 
@@ -31,6 +32,25 @@ Every registered check now has a config-backed definition:
 - severity
 
 `/poseidon reload` reloads config, rebuilds checks, restarts reloadable managers, and validates that each check has the required config keys.
+
+## Exemptions
+
+`ExemptionManager` centralizes false-positive protection for recent joins, teleports, respawns, damage, block updates, server lag, high transaction ping, flight, vehicles, liquids, webs, climbables, slime, and complex collision blocks. Movement, combat, and velocity checks use these exemptions before flagging high-risk evidence.
+
+## Actions
+
+Punishment actions are disabled by default. When explicitly enabled, the action system requires multiple recent flags, applies command cooldowns, blocks experimental checks unless allowed, and supports command placeholders:
+
+- `{player}`
+- `{uuid}`
+- `{check}`
+- `{type}`
+- `{vl}`
+- `{ping}`
+- `{tps}`
+- `{reason}`
+
+Use this only after live monitor logs are tuned.
 
 ## Cross-Instance Tracking
 
@@ -107,4 +127,4 @@ Mitigations have three levels: light, medium, and heavy. In `monitor` mode they 
 - Cancel block placement
 - Optionally setback heavy movement
 
-Production servers should run `monitor` until live logs show the thresholds are stable.
+Production servers should run `monitor` or `production-safe` until live logs show the thresholds are stable.

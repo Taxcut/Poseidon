@@ -15,6 +15,8 @@ This audit separates wired systems from systems that still need deeper engineeri
 - Reloadable check metadata covering enabled, alert, punish, max VL, decay, buffer, mitigation, experimental status, category, severity, and description.
 - Expanded staff commands for checks, profiles, verbose alerts, violations, resets, logs, and runtime metrics.
 - Raytraced reach foundation, velocity response foundation, split inventory/world checks, aim-analysis foundations, improved click statistics, and packet exploit guards.
+- Central exemption manager, bounded transaction queues, size-rotated logs/replay files, and a disabled-by-default action system.
+- Unit tests for action recent-flag requirements and transaction cleanup.
 
 ## Fixed In This Pass
 
@@ -30,6 +32,7 @@ This audit separates wired systems from systems that still need deeper engineeri
 - Reach ignores cross-world entity-id mappings.
 - `/poseidon reload` now rebuilds check instances and restarts reloadable managers instead of leaving stale thresholds in memory.
 - Monitor, staff-test, and production profile application is wired, with punishments still off by default.
+- `production-safe` and `aggressive-test` profiles are wired; global punishments remain disabled unless explicitly changed.
 
 ## Needs More Work Before Enforce Mode
 
@@ -39,7 +42,7 @@ This audit separates wired systems from systems that still need deeper engineeri
 - Add rotation/aim checks only after collecting clean legit HCF fight logs; aim checks are easy to false flag without real baseline data.
 - Add AutoSoup/AutoPot, ChestStealer, Refill, ScaffoldFace, ScaffoldExpand, Eagle/Safewalk, and block-order checks only when there is enough packet context to avoid weak detections.
 - Add replay/tuning tooling for `flags.jsonl` so thresholds can be validated against real legit and cheat sessions.
-- Add action profiles for alerts-only, staff-test, setback-test, and production. Keep default `mitigations.mode: monitor`.
+- Add deeper replay analysis tooling that can summarize sessions automatically instead of manually reading JSONL.
 
 ## Live Test Checklist
 
@@ -48,4 +51,4 @@ This audit separates wired systems from systems that still need deeper engineeri
 - Confirm `/alerts`, `/ac alerts`, `/ac info <player>`, `/ac cloud`, `/ac reload`, and `/ac version`.
 - Fight, pearl, pot, refill, climb ladders, swim, use webs, run on ice/soul sand, ride vehicles, teleport, change worlds, and bridge while monitoring `flags.jsonl`.
 - Simulate lag and TPS drops before tightening any thresholds.
-- Only move to `mitigations.mode: enforce` after a clean monitor-mode sample from real HCF gameplay.
+- Only move to stronger mitigation/action settings after a clean monitor-mode sample from real HCF gameplay.

@@ -46,6 +46,7 @@ public final class CheckManager {
     private final List<Check> checks = new ArrayList<Check>();
     private final Map<String, AtomicLong> totalNanos = new ConcurrentHashMap<String, AtomicLong>();
     private final Map<String, AtomicLong> executions = new ConcurrentHashMap<String, AtomicLong>();
+    private final Map<String, Long> lastErrorLog = new ConcurrentHashMap<String, Long>();
     private PoseidonPlugin plugin;
     private AlertManager alertManager;
 
@@ -57,6 +58,8 @@ public final class CheckManager {
 
     public void reload() {
         checks.clear();
+        totalNanos.clear();
+        executions.clear();
         checks.add(new BadPacketsACheck(plugin, alertManager));
         checks.add(new BadPacketsBCheck(plugin, alertManager));
         checks.add(new BadPacketsCCheck(plugin, alertManager));
@@ -97,10 +100,15 @@ public final class CheckManager {
         for (Check check : checks) {
             if (check.isEnabled()) {
                 long started = System.nanoTime();
-                check.handle(context);
-                long elapsed = System.nanoTime() - started;
-                counter(totalNanos, check.getName()).addAndGet(elapsed);
-                counter(executions, check.getName()).incrementAndGet();
+                try {
+                    check.handle(context);
+                } catch (RuntimeException exception) {
+                    logCheckError(check, exception);
+                } finally {
+                    long elapsed = System.nanoTime() - started;
+                    counter(totalNanos, check.getName()).addAndGet(elapsed);
+                    counter(executions, check.getName()).incrementAndGet();
+                }
             }
         }
     }
@@ -157,5 +165,16 @@ public final class CheckManager {
         AtomicLong created = new AtomicLong();
         AtomicLong previous = map.putIfAbsent(key, created);
         return previous == null ? created : previous;
+    }
+
+    private void logCheckError(Check check, RuntimeException exception) {
+        long now = System.currentTimeMillis();
+        Long last = lastErrorLog.get(check.getName());
+        if (last != null && now - last.longValue() < 10000L) {
+            return;
+        }
+        lastErrorLog.put(check.getName(), Long.valueOf(now));
+        plugin.getLogger().warning("Check " + check.getName() + " failed: " + exception.getClass().getSimpleName()
+                + ": " + exception.getMessage());
     }
 }

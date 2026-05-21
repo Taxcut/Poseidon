@@ -31,7 +31,9 @@ public final class CloudSyncManager implements BehaviorSignalListener {
         this.spoolWriter = new AsyncLineWriter(plugin,
                 new File(plugin.getDataFolder(), plugin.getConfig().getString("cloud.spool-file", "cloud-signals.jsonl")),
                 plugin.getConfig().getLong("cloud.flush-interval-ticks", 40L),
-                plugin.getConfig().getInt("cloud.max-lines-per-flush", 512));
+                plugin.getConfig().getInt("cloud.max-lines-per-flush", 512),
+                plugin.getConfig().getLong("cloud.max-spool-bytes", 10485760L),
+                plugin.getConfig().getInt("cloud.max-spool-backups", 2));
     }
 
     public void start() {

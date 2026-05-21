@@ -19,15 +19,23 @@ public final class AsyncLineWriter {
     private final File file;
     private final long intervalTicks;
     private final int maxLinesPerFlush;
+    private final long maxBytes;
+    private final int maxBackups;
     private final Queue<String> queue = new ConcurrentLinkedQueue<String>();
     private final AtomicBoolean flushing = new AtomicBoolean();
     private BukkitTask task;
 
     public AsyncLineWriter(JavaPlugin plugin, File file, long intervalTicks, int maxLinesPerFlush) {
+        this(plugin, file, intervalTicks, maxLinesPerFlush, 0L, 0);
+    }
+
+    public AsyncLineWriter(JavaPlugin plugin, File file, long intervalTicks, int maxLinesPerFlush, long maxBytes, int maxBackups) {
         this.plugin = plugin;
         this.file = file;
         this.intervalTicks = Math.max(1L, intervalTicks);
         this.maxLinesPerFlush = Math.max(1, maxLinesPerFlush);
+        this.maxBytes = Math.max(0L, maxBytes);
+        this.maxBackups = Math.max(0, maxBackups);
     }
 
     public void start() {
@@ -88,6 +96,7 @@ public final class AsyncLineWriter {
 
             BufferedWriter writer = null;
             try {
+                rotateIfNeeded();
                 writer = new BufferedWriter(new FileWriter(file, true));
                 for (String line : lines) {
                     writer.write(line);
@@ -106,5 +115,34 @@ public final class AsyncLineWriter {
         } finally {
             flushing.set(false);
         }
+    }
+
+    private void rotateIfNeeded() {
+        if (maxBytes <= 0L || maxBackups <= 0 || !file.exists() || file.length() < maxBytes) {
+            return;
+        }
+
+        File oldest = backup(maxBackups);
+        if (oldest.exists() && !oldest.delete()) {
+            plugin.getLogger().warning("Failed to delete old log backup " + oldest.getName());
+            return;
+        }
+
+        for (int i = maxBackups - 1; i >= 1; i--) {
+            File current = backup(i);
+            if (current.exists() && !current.renameTo(backup(i + 1))) {
+                plugin.getLogger().warning("Failed to rotate log backup " + current.getName());
+                return;
+            }
+        }
+
+        if (!file.renameTo(backup(1))) {
+            plugin.getLogger().warning("Failed to rotate log " + file.getName());
+        }
+    }
+
+    private File backup(int index) {
+        File parent = file.getParentFile();
+        return parent == null ? new File(file.getName() + "." + index) : new File(parent, file.getName() + "." + index);
     }
 }

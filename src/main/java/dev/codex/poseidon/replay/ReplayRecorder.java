@@ -24,7 +24,9 @@ public final class ReplayRecorder {
         writer = new AsyncLineWriter(plugin,
                 new File(plugin.getDataFolder(), plugin.getConfig().getString("replay.file", "replay-sessions.jsonl")),
                 plugin.getConfig().getLong("replay.flush-interval-ticks", 40L),
-                plugin.getConfig().getInt("replay.max-lines-per-flush", 512));
+                plugin.getConfig().getInt("replay.max-lines-per-flush", 512),
+                plugin.getConfig().getLong("replay.max-bytes", 20971520L),
+                plugin.getConfig().getInt("replay.max-backups", 2));
         if (isEnabled()) {
             writer.start();
         }

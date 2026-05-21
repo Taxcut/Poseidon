@@ -1,6 +1,7 @@
 package dev.codex.poseidon;
 
 import dev.codex.poseidon.alert.AlertManager;
+import dev.codex.poseidon.action.ActionManager;
 import dev.codex.poseidon.behavior.BehaviorSignalBus;
 import dev.codex.poseidon.check.CheckManager;
 import dev.codex.poseidon.cloud.CrossInstanceReputationManager;
@@ -9,6 +10,7 @@ import dev.codex.poseidon.command.PoseidonCommand;
 import dev.codex.poseidon.config.ConfigValidator;
 import dev.codex.poseidon.data.PlayerData;
 import dev.codex.poseidon.data.PlayerDataManager;
+import dev.codex.poseidon.exempt.ExemptionManager;
 import dev.codex.poseidon.listener.InventoryLifecycleListener;
 import dev.codex.poseidon.listener.PlayerLifecycleListener;
 import dev.codex.poseidon.mitigation.MitigationManager;
@@ -28,6 +30,7 @@ public final class PoseidonPlugin extends JavaPlugin {
     private PlayerDataManager dataManager;
     private BehaviorSignalBus behaviorSignalBus;
     private AlertManager alertManager;
+    private ActionManager actionManager;
     private CloudSyncManager cloudSyncManager;
     private CrossInstanceReputationManager crossInstanceReputationManager;
     private MitigationManager mitigationManager;
@@ -37,6 +40,7 @@ public final class PoseidonPlugin extends JavaPlugin {
     private TransactionManager transactionManager;
     private RuntimeStateSampler runtimeStateSampler;
     private ReplayRecorder replayRecorder;
+    private ExemptionManager exemptionManager;
     private TpsTracker tpsTracker;
     private BukkitTask violationDecayTask;
 
@@ -47,6 +51,8 @@ public final class PoseidonPlugin extends JavaPlugin {
         dataManager = new PlayerDataManager();
         behaviorSignalBus = new BehaviorSignalBus();
         alertManager = new AlertManager(this, behaviorSignalBus);
+        actionManager = new ActionManager(this);
+        behaviorSignalBus.register(actionManager);
         cloudSyncManager = new CloudSyncManager(this);
         behaviorSignalBus.register(cloudSyncManager);
         crossInstanceReputationManager = new CrossInstanceReputationManager(this, dataManager);
@@ -59,11 +65,12 @@ public final class PoseidonPlugin extends JavaPlugin {
         ConfigValidator.validate(this, checkManager);
         runtimeStateSampler = new RuntimeStateSampler(this, dataManager);
         replayRecorder = new ReplayRecorder(this);
+        exemptionManager = new ExemptionManager(this);
         tpsTracker = new TpsTracker(this);
         transactionManager = new TransactionManager(this, dataManager);
         packetManager = new PacketManager(this, dataManager, checkManager, transactionManager, replayRecorder);
 
-        Bukkit.getPluginManager().registerEvents(new PlayerLifecycleListener(dataManager), this);
+        Bukkit.getPluginManager().registerEvents(new PlayerLifecycleListener(this, dataManager), this);
         Bukkit.getPluginManager().registerEvents(new InventoryLifecycleListener(dataManager), this);
         Bukkit.getPluginManager().registerEvents(mitigationManager, this);
         PoseidonCommand command = new PoseidonCommand(this, dataManager, alertManager);
@@ -137,6 +144,10 @@ public final class PoseidonPlugin extends JavaPlugin {
         return alertManager;
     }
 
+    public ActionManager getActionManager() {
+        return actionManager;
+    }
+
     public BehaviorSignalBus getBehaviorSignalBus() {
         return behaviorSignalBus;
     }
@@ -157,6 +168,10 @@ public final class PoseidonPlugin extends JavaPlugin {
         return mitigationManager;
     }
 
+    public OnlineBehaviorModel getOnlineBehaviorModel() {
+        return onlineBehaviorModel;
+    }
+
     public CheckManager getCheckManager() {
         return checkManager;
     }
@@ -171,6 +186,10 @@ public final class PoseidonPlugin extends JavaPlugin {
 
     public ReplayRecorder getReplayRecorder() {
         return replayRecorder;
+    }
+
+    public ExemptionManager getExemptionManager() {
+        return exemptionManager;
     }
 
     public void reloadPoseidon() {
@@ -219,9 +238,15 @@ public final class PoseidonPlugin extends JavaPlugin {
             getConfig().set("mitigations.mode", "staff-test");
             getConfig().set("settings.verbose-default", Boolean.TRUE);
             setAllPunishments(false);
-        } else if ("production".equalsIgnoreCase(profile)) {
+        } else if ("production-safe".equalsIgnoreCase(profile) || "production".equalsIgnoreCase(profile)) {
             getConfig().set("mitigations.mode", "production");
             getConfig().set("settings.verbose-default", Boolean.FALSE);
+            getConfig().set("punishments.enabled", Boolean.FALSE);
+            setAllPunishments(false);
+        } else if ("aggressive-test".equalsIgnoreCase(profile) || "aggressivetest".equalsIgnoreCase(profile)) {
+            getConfig().set("mitigations.mode", "production");
+            getConfig().set("settings.verbose-default", Boolean.TRUE);
+            getConfig().set("punishments.enabled", Boolean.FALSE);
             setStablePunishmentsOnly();
         } else {
             return false;

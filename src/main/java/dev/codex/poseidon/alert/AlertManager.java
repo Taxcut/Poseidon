@@ -166,6 +166,17 @@ public final class AlertManager {
         return verboseStaff.contains(player.getUniqueId());
     }
 
+    public void clear(UUID uuid) {
+        disabledAlerts.remove(uuid);
+        verboseStaff.remove(uuid);
+        verboseTargets.remove(uuid);
+        for (Map.Entry<UUID, UUID> entry : verboseTargets.entrySet()) {
+            if (uuid.equals(entry.getValue())) {
+                verboseTargets.remove(entry.getKey());
+            }
+        }
+    }
+
     public int getPendingFlagLogLines() {
         return flagLogWriter == null ? 0 : flagLogWriter.pending();
     }
@@ -177,7 +188,9 @@ public final class AlertManager {
         flagLogWriter = new AsyncLineWriter(plugin,
                 new File(plugin.getDataFolder(), plugin.getConfig().getString("settings.flag-log.file", "flags.jsonl")),
                 plugin.getConfig().getLong("settings.flag-log.flush-interval-ticks", 20L),
-                plugin.getConfig().getInt("settings.flag-log.max-lines-per-flush", 256));
+                plugin.getConfig().getInt("settings.flag-log.max-lines-per-flush", 256),
+                plugin.getConfig().getLong("settings.flag-log.max-bytes", 10485760L),
+                plugin.getConfig().getInt("settings.flag-log.max-backups", 3));
         if (plugin.getConfig().getBoolean("settings.flag-log.enabled", true)) {
             flagLogWriter.start();
         }
@@ -209,6 +222,8 @@ public final class AlertManager {
                 + "\"detail\":\"" + escape(detail) + "\","
                 + "\"confidence\":\"" + confidenceLabel(data, violation) + "\","
                 + "\"transactionPing\":" + data.getTransactionPing() + ","
+                + "\"averageTransactionPing\":" + jsonNumber(data.getAverageTransactionPing()) + ","
+                + "\"transactionJitter\":" + jsonNumber(data.getTransactionPingJitter()) + ","
                 + "\"tps\":" + jsonNumber(plugin.getTpsTracker().getTps()) + ","
                 + "\"world\":\"" + escape(data.getLastWorldName()) + "\","
                 + "\"velocity\":\"" + escape(data.getLastVelocitySummary()) + "\","

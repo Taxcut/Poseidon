@@ -46,6 +46,10 @@ public final class OnlineBehaviorModel implements BehaviorSignalListener {
         }
     }
 
+    public void clear(UUID uuid) {
+        profiles.remove(uuid);
+    }
+
     @Override
     public void onSignal(BehaviorSignal signal) {
         if (!isEnabled()) {

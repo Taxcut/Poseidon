@@ -28,6 +28,7 @@ public final class PlayerData {
     private final Queue<Long> inventoryClickPackets = new ArrayDeque<Long>();
     private final Queue<Long> blockPlacePackets = new ArrayDeque<Long>();
     private final Queue<Long> allPackets = new ArrayDeque<Long>();
+    private final Queue<Long> transactionPings = new ArrayDeque<Long>();
     private final Queue<PositionSnapshot> positionHistory = new ArrayDeque<PositionSnapshot>();
     private final Queue<RotationSample> rotationSamples = new ArrayDeque<RotationSample>();
     private final AtomicInteger transactionCounter = new AtomicInteger(1);
@@ -42,6 +43,11 @@ public final class PlayerData {
     private volatile long lastPacketTimestamp;
     private volatile long lastInventoryOpen;
     private volatile long lastInventoryClose;
+    private volatile long joinTimestamp;
+    private volatile long lastRespawnTimestamp;
+    private volatile long lastDamageTimestamp;
+    private volatile long lastBlockPlaceTimestamp;
+    private volatile long lastBlockBreakTimestamp;
     private volatile long lastTeleportTimestamp;
     private volatile int lastAttackedEntityId = -1;
     private volatile String lastWorldName = "";
@@ -196,6 +202,12 @@ public final class PlayerData {
         }
         transactionPing = Math.max(0L, timestamp - sent.longValue());
         lastTransactionReceived = timestamp;
+        synchronized (transactionPings) {
+            transactionPings.add(Long.valueOf(transactionPing));
+            while (transactionPings.size() > 40) {
+                transactionPings.poll();
+            }
+        }
         return true;
     }
 
@@ -206,6 +218,24 @@ public final class PlayerData {
             if (now - entry.getValue().longValue() > maxAgeMs) {
                 iterator.remove();
             }
+        }
+    }
+
+    public void trimPendingTransactions(int maxPending) {
+        int limit = Math.max(1, maxPending);
+        while (pendingTransactions.size() > limit) {
+            Short oldestId = null;
+            long oldest = Long.MAX_VALUE;
+            for (Map.Entry<Short, Long> entry : pendingTransactions.entrySet()) {
+                if (entry.getValue().longValue() < oldest) {
+                    oldest = entry.getValue().longValue();
+                    oldestId = entry.getKey();
+                }
+            }
+            if (oldestId == null) {
+                return;
+            }
+            pendingTransactions.remove(oldestId);
         }
     }
 
@@ -312,6 +342,34 @@ public final class PlayerData {
         return transactionPing;
     }
 
+    public double getAverageTransactionPing() {
+        synchronized (transactionPings) {
+            if (transactionPings.isEmpty()) {
+                return transactionPing;
+            }
+            long total = 0L;
+            for (Long ping : transactionPings) {
+                total += ping.longValue();
+            }
+            return total / (double) transactionPings.size();
+        }
+    }
+
+    public double getTransactionPingJitter() {
+        synchronized (transactionPings) {
+            if (transactionPings.size() <= 1) {
+                return 0.0D;
+            }
+            double average = getAverageTransactionPing();
+            double variance = 0.0D;
+            for (Long ping : transactionPings) {
+                double offset = ping.longValue() - average;
+                variance += offset * offset;
+            }
+            return Math.sqrt(variance / transactionPings.size());
+        }
+    }
+
     public long getLastTransactionSent() {
         return lastTransactionSent;
     }
@@ -374,6 +432,48 @@ public final class PlayerData {
 
     public long getLastTeleportTimestamp() {
         return lastTeleportTimestamp;
+    }
+
+    public long getJoinTimestamp() {
+        return joinTimestamp;
+    }
+
+    public void markJoin(long timestamp) {
+        this.joinTimestamp = timestamp;
+        this.lastTeleportTimestamp = timestamp;
+    }
+
+    public long getLastRespawnTimestamp() {
+        return lastRespawnTimestamp;
+    }
+
+    public void markRespawn(long timestamp) {
+        this.lastRespawnTimestamp = timestamp;
+        this.lastTeleportTimestamp = timestamp;
+    }
+
+    public long getLastDamageTimestamp() {
+        return lastDamageTimestamp;
+    }
+
+    public void markDamage(long timestamp) {
+        this.lastDamageTimestamp = timestamp;
+    }
+
+    public long getLastBlockPlaceTimestamp() {
+        return lastBlockPlaceTimestamp;
+    }
+
+    public void markBlockPlace(long timestamp) {
+        this.lastBlockPlaceTimestamp = timestamp;
+    }
+
+    public long getLastBlockBreakTimestamp() {
+        return lastBlockBreakTimestamp;
+    }
+
+    public void markBlockBreak(long timestamp) {
+        this.lastBlockBreakTimestamp = timestamp;
     }
 
     public void markTeleport(long timestamp, double x, double y, double z) {

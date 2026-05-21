@@ -9,6 +9,7 @@ import dev.codex.poseidon.data.PlayerData;
 import dev.codex.poseidon.packet.PacketContext;
 
 public final class MoveACheck extends Check {
+    private final PoseidonPlugin plugin;
     private final AlertManager alertManager;
     private final double maxHorizontalDelta;
     private final double maxVerticalDelta;
@@ -23,6 +24,7 @@ public final class MoveACheck extends Check {
                 CheckSeverity.MEDIUM,
                 false,
                 "Conservative impossible movement delta guard.");
+        this.plugin = plugin;
         this.alertManager = alertManager;
         this.maxHorizontalDelta = plugin.getConfig().getDouble("checks.MoveA.max-horizontal-delta", 12.0D);
         this.maxVerticalDelta = plugin.getConfig().getDouble("checks.MoveA.max-vertical-delta", 12.0D);
@@ -37,6 +39,10 @@ public final class MoveACheck extends Check {
 
         PlayerData data = context.getData();
         if (!data.hasPosition()) {
+            return;
+        }
+
+        if (plugin.getExemptionManager().isMovementExempt(context.getPlayer(), data, context.getTimestamp())) {
             return;
         }
 

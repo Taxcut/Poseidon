@@ -52,9 +52,11 @@ public final class TransactionManager {
     private void tick() {
         long now = System.currentTimeMillis();
         long staleMs = plugin.getConfig().getLong("settings.stale-transaction-ms", 10000L);
+        int maxPending = plugin.getConfig().getInt("settings.max-pending-transactions", 20);
         for (Player player : Bukkit.getOnlinePlayers()) {
             PlayerData data = dataManager.getOrCreate(player);
             data.purgeStaleTransactions(now, staleMs);
+            data.trimPendingTransactions(maxPending);
             sendTransaction(player, data, now);
         }
     }
